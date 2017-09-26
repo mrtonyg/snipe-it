@@ -1,4 +1,5 @@
 <IfModule mod_rewrite.c>
+
     <IfModule mod_negotiation.c>
         Options -MultiViews
     </IfModule>
@@ -7,5 +8,6 @@
     <FilesMatch "\.env$">
     Deny from all
     </FilesMatch>
-    
+    RewriteCond %{HTTPS} off
+    RewriteRule (.*) https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]    
 </IfModule>
