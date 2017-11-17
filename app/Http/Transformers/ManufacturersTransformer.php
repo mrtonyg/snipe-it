@@ -26,6 +26,7 @@ class ManufacturersTransformer
                 'id' => (int) $manufacturer->id,
                 'name' => e($manufacturer->name),
                 'url' => e($manufacturer->url),
+                'image' =>   ($manufacturer->image) ? app('manufacturers_upload_url').e($manufacturer->image) : null,
                 'support_url' => e($manufacturer->support_url),
                 'support_phone' => e($manufacturer->support_phone),
                 'support_email' => e($manufacturer->support_email),

@@ -25,8 +25,8 @@ return array(
     ),
 
     'audit' => array(
-        'error'   		=> 'Asset audit was unsuccessful. Please try again.',
-        'success' 		=> 'Asset audit successfully logged.'
+        'error'   		=> 'Audit majetku byl neúspěšný. Prosím zkuste to znovu.',
+        'success' 		=> 'Audit aktiv byl úspěšně zaznamenáván.'
     ),
 
 
@@ -62,7 +62,8 @@ return array(
         'error'   		=> 'Majetek nebyl předán, zkuste to prosím znovu',
         'success' 		=> 'Majetek byl v pořádku předán.',
         'user_does_not_exist' => 'Tento uživatel je neplatný. Zkuste to prosím znovu.',
-        'not_available' => 'Tento majetek není k dispozici pro výdej!'
+        'not_available' => 'Tento majetek není k dispozici pro výdej!',
+        'no_assets_selected' => 'You must select at least one asset from the list'
     ),
 
     'checkin' => array(

@@ -54,12 +54,28 @@ class Location extends SnipeModel
 
     public function assets()
     {
-        return $this->hasManyThrough('\App\Models\Asset', '\App\Models\User', 'location_id', 'assigned_to', 'id');
+        return $this->hasMany('\App\Models\Asset', 'location_id')
+            ->whereHas('assetstatus', function ($query) {
+                    $query->where('status_labels.deployable', '=', 1)
+                        ->orWhere('status_labels.pending', '=', 1)
+                        ->orWhere('status_labels.archived', '=', 0);
+            });
     }
 
-    public function locationAssets()
+    public function rtd_assets()
     {
-        return $this->hasMany('\App\Models\Asset', 'rtd_location_id')->orHas('assignedAssets');
+        /* This used to have an ...->orHas() clause that referred to
+           assignedAssets, and that was probably incorrect, as well as
+           definitely was setting fire to the query-planner. So don't do that.
+
+           It is arguable that we should have a '...->whereNull('assigned_to')
+           bit in there, but that isn't always correct either (in the case 
+           where a user has no location, for example).
+
+           In all likelyhood, we need to denorm an "effective_location" column
+           into Assets to make this slightly less miserable.
+        */
+        return $this->hasMany('\App\Models\Asset', 'rtd_location_id');
     }
 
     public function parent()
@@ -77,10 +93,15 @@ class Location extends SnipeModel
         return $this->hasMany('\App\Models\Location', 'parent_id');
     }
 
+    // I don't think we need this anymore since we de-normed location_id in assets?
     public function assignedAssets()
     {
         return $this->morphMany('App\Models\Asset', 'assigned', 'assigned_type', 'assigned_to')->withTrashed();
-        // return $this->hasMany('\App\Models\Asset', 'assigned_to')->withTrashed();
+    }
+
+    public function setLdapOuAttribute($ldap_ou)
+    {
+        return $this->attributes['ldap_ou'] = empty($ldap_ou) ? null : $ldap_ou;
     }
 
     public static function getLocationHierarchy($locations, $parent_id = null)

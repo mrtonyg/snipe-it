@@ -86,20 +86,5 @@
     'columns' => \App\Presenters\UserPresenter::dataTableLayout()
 ])
 
-<script>
 
-    function groupsFormatter(value) {
-
-        if (value) {
-            var groups = '';
-            for (var index in value.rows) {
-                groups += '<a href="#" class="label label-default"> ' + value.rows[index].name + '</a> ';
-            }
-            return groups;
-        }
-
-    }
-
-
-</script>
 @stop

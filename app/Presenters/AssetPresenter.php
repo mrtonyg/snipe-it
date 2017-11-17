@@ -112,7 +112,7 @@ class AssetPresenter extends Presenter
                 "sortable" => true,
                 "title" => trans('admin/hardware/table.location'),
                 "visible" => true,
-                "formatter" => "locationsLinkObjFormatter"
+                "formatter" => "deployedLocationFormatter"
             ],  [
                 "field" => "manufacturer",
                 "searchable" => true,
@@ -139,6 +139,7 @@ class AssetPresenter extends Presenter
                 "searchable" => true,
                 "sortable" => true,
                 "title" => trans('general.purchase_cost'),
+                "footerFormatter" => 'sumFormatter',
             ], [
                 "field" => "order_number",
                 "searchable" => true,
@@ -147,6 +148,19 @@ class AssetPresenter extends Presenter
                 "title" => trans('general.order_number'),
                 'formatter' => "orderNumberObjFilterFormatter"
             ], [
+                "field" => "warranty_months",
+                "searchable" => true,
+                "sortable" => true,
+                "visible" => false,
+                "title" => trans('admin/hardware/form.warranty')
+            ],[
+                "field" => "warranty_expires",
+                "searchable" => false,
+                "sortable" => false,
+                "visible" => false,
+                "title" => 'Warranty Expires',
+                "formatter" => "dateDisplayFormatter"
+            ],[
                 "field" => "notes",
                 "searchable" => true,
                 "sortable" => true,
@@ -267,19 +281,41 @@ class AssetPresenter extends Presenter
     }
 
     /**
+     * Generate img tag to this items image.
+     * @return mixed|string
+     */
+    public function imageSrc()
+    {
+        $imagePath = '';
+        if ($this->image && !empty($this->image)) {
+            $imagePath = $this->image;
+            return 'poop';
+        } elseif ($this->model && !empty($this->model->image)) {
+            $imagePath = $this->model->image;
+            return 'fart';
+        }
+        if (!empty($imagePath)) {
+            return config('app.url').'/uploads/assets/'.$imagePath;
+        }
+        return $imagePath;
+    }
+
+    /**
      * Get Displayable Name
      * @return string
      **/
     public function name()
     {
-        if (empty($this->name)) {
-            if (isset($this->model)) {
-                return $this->model->name.' ('.$this->asset_tag.')';
+        
+        if (empty($this->model->name)) {
+            if (isset($this->model->model)) {
+                return $this->model->model->name.' ('.$this->model->asset_tag.')';
             }
-            return $this->asset_tag;
+            return $this->model->asset_tag;
         } else {
-            return $this->name.' ('.$this->asset_tag.')';
+            return $this->model->name . ' (' . $this->model->asset_tag . ')';
         }
+
     }
 
     /**
@@ -288,7 +324,18 @@ class AssetPresenter extends Presenter
      */
     public function fullName()
     {
-        return $this->name();
+        $str = '';
+        if ($this->model->name) {
+            $str .= $this->name;
+        }
+
+        if ($this->asset_tag) {
+            $str .= ' ('.$this->model->asset_tag.')';
+        }
+        if ($this->model->model) {
+            $str .= ' - '.$this->model->model->name;
+        }
+        return $str;
     }
     /**
      * Returns the date this item hits EOL.
@@ -325,13 +372,32 @@ class AssetPresenter extends Presenter
         return $interval;
     }
 
+    /**
+     * @return string
+     * This handles the status label "meta" status of "deployed" if
+     * it's assigned. Should maybe deprecate.
+     */
+    public function statusMeta()
+    {
+        if ($this->model->assigned) {
+            return strtolower(trans('general.deployed'));
+        }
+        return $this->model->assetstatus->getStatuslabelType();
+    }
+
+    /**
+     * @return string
+     * This handles the status label "meta" status of "deployed" if
+     * it's assigned. Should maybe deprecate.
+     */
     public function statusText()
     {
-        if ($this->model->assignedTo) {
+        if ($this->model->assigned) {
             return trans('general.deployed');
         }
         return $this->model->assetstatus->name;
     }
+
     /**
      * Date the warantee expires.
      * @return false|string

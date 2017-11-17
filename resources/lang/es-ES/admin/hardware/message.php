@@ -25,8 +25,8 @@ return array(
     ),
 
     'audit' => array(
-        'error'   		=> 'Asset audit was unsuccessful. Please try again.',
-        'success' 		=> 'Asset audit successfully logged.'
+        'error'   		=> 'La auditoría de activos no tuvo éxito. Vuelve a intentarlo.',
+        'success' 		=> 'Auditoría de activos registrada correctamente.'
     ),
 
 
@@ -54,7 +54,7 @@ return array(
     'delete' => array(
         'confirm'   	=> 'Estás seguro que quieres eliminar el equipo?',
         'error'   		=> 'Equipo no eliminado, intentalo de nuevo.',
-        'nothing_updated'   => 'No assets were selected, so nothing was deleted.',
+        'nothing_updated'   => 'No se seleccionaron los activos, por lo que no se eliminó nada.',
         'success' 		=> 'Equipo eliminado.'
     ),
 
@@ -62,7 +62,8 @@ return array(
         'error'   		=> 'Equipo no asignado, intentalo de nuevo',
         'success' 		=> 'Equipo asignado.',
         'user_does_not_exist' => 'Este usuario no es correcto. Intentalo de nuevo.',
-        'not_available' => '¡Ese artículo no está disponible para retirada!'
+        'not_available' => '¡Ese artículo no está disponible para retirada!',
+        'no_assets_selected' => 'You must select at least one asset from the list'
     ),
 
     'checkin' => array(

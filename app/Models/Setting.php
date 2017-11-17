@@ -38,6 +38,7 @@ class Setting extends Model
           "pwd_secure_min" => "numeric|required|min:5",
           "audit_warning_days" => "numeric|nullable",
           "audit_interval" => "numeric|nullable",
+          "custom_forgot_pass_url" => "url|nullable",
     ];
 
     protected $fillable = ['site_name','email_domain','email_format','username_format'];
@@ -88,6 +89,18 @@ class Setting extends Model
 
     }
 
+    /**
+     * Escapes the custom CSS, and then un-escapes the greater-than symbol
+     * so it can work with direct descendant characters for bootstrap
+     * menu overrides like:
+     * 
+     * .skin-blue .sidebar-menu>li.active>a, .skin-blue .sidebar-menu>li:hover>a
+     * 
+     * Important: Do not remove the e() escaping here, as we output raw in the blade.
+     *
+     * @return string escaped CSS
+     * @author A. Gianotto <snipe@snipe.net>
+     */
     public function show_custom_css()
     {
         $custom_css = Setting::getSettings()->custom_css;

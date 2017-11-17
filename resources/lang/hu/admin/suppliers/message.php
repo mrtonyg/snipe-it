@@ -3,22 +3,25 @@
 return array(
 
     'does_not_exist' => 'Beszállító nem létezik.',
-    'assoc_users'	 => 'Ez a beszállító jelenleg legalább egy modellel társítva van, így nem lehet törölni. Kérjük, frissítse a modellt úgy, hogy ne hivatkozzon erre a beszállítóra, és próbálkozzon újra. ',
+
 
     'create' => array(
         'error'   => 'Beszállító nem lett létrehozva, próbálja meg újra.',
-        'success' => 'Supplier created successfully.'
+        'success' => 'A szállító sikeresen létrejött.'
     ),
 
     'update' => array(
-        'error'   => 'Supplier was not updated, please try again',
-        'success' => 'Supplier updated successfully.'
+        'error'   => 'Szállító nem frissült, próbálkozzon újra',
+        'success' => 'Szállító sikeresen frissült.'
     ),
 
     'delete' => array(
-        'confirm'   => 'Are you sure you wish to delete this supplier?',
-        'error'   => 'There was an issue deleting the supplier. Please try again.',
-        'success' => 'Supplier was deleted successfully.'
+        'confirm'   => 'Biztosan törölni szeretné ezt a szállítót?',
+        'error'   => 'A szállító törlését okozta. Kérlek próbáld újra.',
+        'success' => 'A szállító sikeresen törölve lett.',
+        'assoc_assets'	 => 'Ez a beszállító jelenleg :asset_count eszközhöz van társítva és nem törölhető. Kérem frissítse az eszközeit hogy ne hivatkozzon erre a beszállítóra és próbálja újra. ',
+        'assoc_licenses'	 => 'Ez a beszállító jelenleg :asset_count licenszhez van társítva és nem törölhető. Kérem frissítse az licenszeit hogy ne hivatkozzonak erre a beszállítóra és próbálja újra. ',
+        'assoc_maintenances'	 => 'Ez a beszállító jelenleg :asset_maintenances_count eszköz karbantartáshoz van társítva és nem törölhető. Kérem frissítse az eszköz karbantartásait hogy ne hivatkozzon erre a beszállítóra és próbálja újra. ',
     )
 
 );

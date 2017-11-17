@@ -41,6 +41,15 @@ class ConsumablePresenter extends Presenter
                 "title" => trans('general.name'),
                 "visible" => true,
                 "formatter" => 'consumablesLinkFormatter',
+            ],
+            [
+                "field" => "image",
+                "searchable" => false,
+                "sortable" => true,
+                "switchable" => true,
+                "title" => trans('general.image'),
+                "visible" => false,
+                "formatter" => 'imageFormatter',
             ], [
                 "field" => "category",
                 "searchable" => true,
@@ -89,6 +98,7 @@ class ConsumablePresenter extends Presenter
                 "sortable" => true,
                 "title" => trans('general.purchase_cost'),
                 "visible" => true,
+                "footerFormatter" => 'sumFormatter',
             ],[
                 "field" => "change",
                 "searchable" => false,

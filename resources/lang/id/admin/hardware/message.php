@@ -25,8 +25,8 @@ return array(
     ),
 
     'audit' => array(
-        'error'   		=> 'Asset audit was unsuccessful. Please try again.',
-        'success' 		=> 'Asset audit successfully logged.'
+        'error'   		=> 'Audit aset tidak berhasil. Silahkan coba lagi',
+        'success' 		=> 'Audit aset berhasil login.'
     ),
 
 
@@ -54,7 +54,7 @@ return array(
     'delete' => array(
         'confirm'   	=> 'Apakah Anda yakin untuk menghapus aset ini?',
         'error'   		=> 'Terdapat kesalahan pada saat penghapusan aset. Silahkan coba kembali.',
-        'nothing_updated'   => 'No assets were selected, so nothing was deleted.',
+        'nothing_updated'   => 'Tidak ada aset yang dipilih, jadi tidak ada yang dihapus.',
         'success' 		=> 'Aset sukses terhapus.'
     ),
 
@@ -62,7 +62,8 @@ return array(
         'error'   		=> 'Aset gagal di berikan, silahkan coba kembali',
         'success' 		=> 'Sukses memberikan aset.',
         'user_does_not_exist' => 'Pengguna tersebut tidak terdaftar. Silahkan coba kembali.',
-        'not_available' => 'Aset tersebut tidak tersedia untuk checkout!'
+        'not_available' => 'Aset tersebut tidak tersedia untuk checkout!',
+        'no_assets_selected' => 'You must select at least one asset from the list'
     ),
 
     'checkin' => array(

@@ -78,7 +78,7 @@ return [
     |
     */
 
-    'locale' =>  env('APP_LOCALE', 'en_US.UTF-8'),
+    'locale' =>  env('APP_LOCALE', 'en'),
 
     /*
     |--------------------------------------------------------------------------
@@ -122,7 +122,40 @@ return [
     */
 
     'log' => env('APP_LOG', 'single'),
-    'log-level' => env('APP_LOG_LEVEL', 'error'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Logging Max Files
+    |--------------------------------------------------------------------------
+    |
+    | When using the daily log mode, Laravel will only retain 5
+    | days of log files by default.
+    |
+    | To change this, set the APP_LOG_MAX_FILES option in your .env.
+    |
+    */
+
+    'log_max_files' => env('APP_LOG_MAX_FILES', 5),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Logging Detail
+    |--------------------------------------------------------------------------
+    |
+    | By default, Laravel writes all log levels to storage. However, in your 
+    | production environment, you may wish to configure the minimum severity that 
+    | should be logged by editing your APP_LOG_LEVEL env config.
+    |
+    | Laravel will log all levels greater than or equal to the specified severity.
+    | For example, a default log_level of error will log error, critical, alert,
+    | and emergency messages.
+    |
+    | APP_LOG_LEVEL options are:
+    | "debug", "info", "notice", "warning", "error", "critical", "alert", "emergency"
+    |
+    */
+    
+    'log_level' => env('APP_LOG_LEVEL', 'error'),
 
 
     /*
@@ -153,6 +186,39 @@ return [
     */
 
     'allow_iframing' => env('ALLOW_IFRAMING', false),
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | REFERRER-POLICY
+    |--------------------------------------------------------------------------
+    |
+    | This is an additional security header that browsers use to determine
+    | whether they should report back URL referrer information.
+    |
+    | Read more: https://www.w3.org/TR/referrer-policy/
+    |
+    */
+
+    'referrer_policy' => env('REFERRER_POLICY', 'same-origin'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | CSP
+    |--------------------------------------------------------------------------
+    |
+    | Disable the content security policy that restricts what scripts, images
+    | and styles can load. (This should be left as false if you don't know
+    | what this means.)
+    |
+    | Read more: https://www.w3.org/TR/CSP/
+    | Read more: https://content-security-policy.com
+    |
+    */
+
+    'enable_csp' => env('ENABLE_CSP', false),
+
+
 
 
     /*
@@ -212,7 +278,6 @@ return [
          */
 
         Barryvdh\Debugbar\ServiceProvider::class,
-        Aws\Laravel\AwsServiceProvider::class,
         Intervention\Image\ImageServiceProvider::class,
         Collective\Html\HtmlServiceProvider::class,
         Spatie\Backup\BackupServiceProvider::class,
@@ -222,7 +287,7 @@ return [
         Laravel\Tinker\TinkerServiceProvider::class,
         Unicodeveloper\DumbPassword\DumbPasswordServiceProvider::class,
         Schuppo\PasswordStrength\PasswordStrengthServiceProvider::class,
-
+        Tightenco\Ziggy\ZiggyServiceProvider::class, // Laravel routes in vue
 
         /*
         * Application Service Providers...
@@ -231,6 +296,8 @@ return [
         App\Providers\AuthServiceProvider::class,
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
+        App\Providers\SettingsServiceProvider::class,
+        App\Providers\ValidationServiceProvider::class,
 
 
         /*

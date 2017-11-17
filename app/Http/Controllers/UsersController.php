@@ -33,6 +33,7 @@ use URL;
 use View;
 use Illuminate\Http\Request;
 use Gate;
+use Artisan;
 
 /**
  * This controller handles all actions related to Users for
@@ -84,10 +85,6 @@ class UsersController extends Controller
         $permissions = $this->filterDisplayable($permissions);
 
         return view('users/edit', compact('groups', 'userGroups', 'permissions', 'userPermissions'))
-        ->with('location_list', Helper::locationsList())
-        ->with('manager_list', Helper::managerList())
-        ->with('company_list', Helper::companyList())
-        ->with('department_list', Helper::departmentList())
         ->with('user', new User);
     }
 
@@ -109,7 +106,6 @@ class UsersController extends Controller
             $user->password = bcrypt($request->input('password'));
             $data['password'] =  $request->input('password');
         }
-        // Update the user
         $user->first_name = $request->input('first_name');
         $user->last_name = $request->input('last_name');
         $user->locale = $request->input('locale');
@@ -122,6 +118,11 @@ class UsersController extends Controller
         $user->company_id = Company::getIdForUser($request->input('company_id', null));
         $user->manager_id = $request->input('manager_id', null);
         $user->notes = $request->input('notes');
+        $user->address = $request->input('address', null);
+        $user->city = $request->input('city', null);
+        $user->state = $request->input('state', null);
+        $user->country = $request->input('country', null);
+        $user->zip = $request->input('zip', null);
 
         // Strip out the superuser permission if the user isn't a superadmin
         $permissions_array = $request->input('permission');
@@ -231,9 +232,9 @@ class UsersController extends Controller
 
     public function edit($id)
     {
-        try {
 
-            $user = User::find($id);
+        if ($user =  User::find($id)) {
+
             $this->authorize('update', $user);
             $permissions = config('permissions');
 
@@ -243,19 +244,14 @@ class UsersController extends Controller
             $user->permissions = $user->decodePermissions();
             $userPermissions = Helper::selectedPermissionsArray($permissions, $user->permissions);
             $permissions = $this->filterDisplayable($permissions);
-            
-        } catch (UserNotFoundException $e) {
 
-            $error = trans('admin/users/message.user_not_found', compact('id'));
-            return redirect()->route('users.index')->with('error', $error);
+            return view('users/edit', compact('user', 'groups', 'userGroups', 'permissions', 'userPermissions'))->with('item', $user);
         }
 
-        // Show the page
-        return view('users/edit', compact('user', 'groups', 'userGroups', 'permissions', 'userPermissions'))
-            ->with('location_list', Helper::locationsList())
-            ->with('department_list', Helper::departmentList())
-            ->with('company_list', Helper::companyList())
-            ->with('manager_list', Helper::managerList());
+        $error = trans('admin/users/message.user_not_found', compact('id'));
+        return redirect()->route('users.index')->with('error', $error);
+
+
     }
 
     /**
@@ -281,6 +277,10 @@ class UsersController extends Controller
         try {
 
             $user = User::find($id);
+
+            if ($user->id == $request->input('manager_id')) {
+                return redirect()->back()->withInput()->with('error', 'You cannot be your own manager.');
+            }
             $this->authorize('update', $user);
             // Figure out of this user was an admin before this edit
             $orig_permissions_array = $user->decodePermissions();
@@ -320,14 +320,23 @@ class UsersController extends Controller
         $user->locale = $request->input('locale');
         $user->employee_num = $request->input('employee_num');
         $user->activated = $request->input('activated', $user->activated);
-        $user->jobtitle = $request->input('jobtitle');
+        $user->jobtitle = $request->input('jobtitle', null);
         $user->phone = $request->input('phone');
         $user->location_id = $request->input('location_id', null);
         $user->company_id = Company::getIdForUser($request->input('company_id', null));
         $user->manager_id = $request->input('manager_id', null);
         $user->notes = $request->input('notes');
         $user->department_id = $request->input('department_id', null);
+        $user->address = $request->input('address', null);
+        $user->city = $request->input('city', null);
+        $user->state = $request->input('state', null);
+        $user->country = $request->input('country', null);
+        $user->zip = $request->input('zip', null);
 
+
+        // Update the location of any assets checked out to this user
+        Asset::where('assigned_type', User::class)
+            ->where('assigned_to', $user->id)->update(['location_id' => $request->input('location_id', null)]);
 
         // Do we want to update the user password?
         if ($request->has('password')) {
@@ -374,6 +383,11 @@ class UsersController extends Controller
             if ($user->id === Auth::user()->id) {
                 // Redirect to the user management page
                 return redirect()->route('users.index')->with('error', 'This user still has ' . $user->assets()->count() . ' assets associated with them.');
+            }
+
+            if (count($user->assets) > 0) {
+                // Redirect to the user management page
+                return redirect()->route('users.index')->with('error', 'This user still has ' . count($user->assets) . ' assets associated with them.');
             }
 
             if ($user->licenses()->count() > 0) {
@@ -429,11 +443,6 @@ class UsersController extends Controller
             if ($request->input('bulk_actions')=='edit') {
 
                 return view('users/bulk-edit', compact('users'))
-                    ->with('location_list', Helper::locationsList())
-                    ->with('company_list', Helper::companyList())
-                    ->with('manager_list', Helper::managerList())
-                    ->with('manager_list', Helper::managerList())
-                    ->with('department_list', Helper::departmentList())
                     ->with('groups', Group::pluck('name', 'id'));
             }
 
@@ -719,7 +728,7 @@ class UsersController extends Controller
             $user->first_name = '';
             $user->last_name = '';
             $user->email = substr($user->email, ($pos = strpos($user->email, '@')) !== false ? $pos : 0);
-            ;
+
             $user->id = null;
 
             // Get this user groups
@@ -732,10 +741,6 @@ class UsersController extends Controller
 
             // Show the page
             return view('users/edit', compact('permissions', 'userPermissions'))
-                            ->with('location_list', Helper::locationsList())
-                            ->with('company_list', Helper::companyList())
-                            ->with('manager_list', Helper::managerList())
-                            ->with('department_list', Helper::departmentList())
                             ->with('user', $user)
                             ->with('groups', Group::pluck('name', 'id'))
                             ->with('userGroups', $userGroups)
@@ -1024,128 +1029,20 @@ class UsersController extends Controller
      */
     public function postLDAP(Request $request)
     {
-        $this->authorize('update', User::class);
-        ini_set('max_execution_time', 600); //600 seconds = 10 minutes
-        ini_set('memory_limit', '500M');
+        // Call Artisan LDAP import command.
+        $location_id = $request->input('location_id');
+        Artisan::call('snipeit:ldap-sync', ['--location_id' => $location_id, '--json_summary' => true]);
 
-        $ldap_result_username = Setting::getSettings()->ldap_username_field;
-        $ldap_result_last_name = Setting::getSettings()->ldap_lname_field;
-        $ldap_result_first_name = Setting::getSettings()->ldap_fname_field;
+        // Collect and parse JSON summary.
+        $ldap_results_json = Artisan::output();
+        $ldap_results = json_decode($ldap_results_json, true);
 
-        $ldap_result_active_flag = Setting::getSettings()->ldap_active_flag_field;
-        $ldap_result_emp_num = Setting::getSettings()->ldap_emp_num;
-        $ldap_result_email = Setting::getSettings()->ldap_email;
-
-        try {
-            $ldapconn = Ldap::connectToLdap();
-        } catch (\Exception $e) {
-            return redirect()->back()->withInput()->with('error', $e->getMessage());
+        // Direct user to appropriate status page.
+        if ($ldap_results['error']) {
+            return redirect()->back()->withInput()->with('error', $ldap_results['error_message']);
+        } else {
+            return redirect()->route('ldap/user')->with('success', "LDAP Import successful.")->with('summary', $ldap_results['summary']);
         }
-
-        try {
-            Ldap::bindAdminToLdap($ldapconn);
-        } catch (\Exception $e) {
-            return redirect()->back()->withInput()->with('error', $e->getMessage());
-        }
-
-        $summary = array();
-
-        $ldap_ou_locations = Location::whereNotNull('ldap_ou')->get();
-
-        $results = Ldap::findLdapUsers();
-
-        // Inject location information fields
-        for ($i = 0; $i < $results["count"]; $i++) {
-            $results[$i]["ldap_location_override"] = false;
-            $results[$i]["location_id"] = 0;
-        }
-
-        // Grab subsets based on location-specific DNs, and overwrite location for these users.
-        foreach ($ldap_ou_locations as $ldap_loc) {
-            $location_users = Ldap::findLdapUsers($ldap_loc->ldap_ou);
-            $usernames = array();
-            for ($i = 0; $i < $location_users["count"]; $i++) {
-                $location_users[$i]["ldap_location_override"] = true;
-                $location_users[$i]["location_id"] = $ldap_loc->id;
-                $usernames[] = $location_users[$i][$ldap_result_username][0];
-            }
-
-            // Delete located users from the general group.
-            foreach ($results as $key => $generic_entry) {
-                if (in_array($generic_entry[$ldap_result_username][0], $location_users)) {
-                    unset($results[$key]);
-                }
-            }
-
-            $global_count = $results['count'];
-            $results = array_merge($location_users, $results);
-            $results['count'] = $global_count;
-        }
-
-        $tmp_pass = substr(str_shuffle("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"), 0, 20);
-        $pass = bcrypt($tmp_pass);
-
-        for ($i = 0; $i < $results["count"]; $i++) {
-            if (empty($ldap_result_active_flag) || $results[$i][$ldap_result_active_flag][0] == "TRUE") {
-
-                $item = array();
-                $item["username"] = isset($results[$i][$ldap_result_username][0]) ? $results[$i][$ldap_result_username][0] : "";
-                $item["employee_number"] = isset($results[$i][$ldap_result_emp_num][0]) ? $results[$i][$ldap_result_emp_num][0] : "";
-                $item["lastname"] = isset($results[$i][$ldap_result_last_name][0]) ? $results[$i][$ldap_result_last_name][0] : "";
-                $item["firstname"] = isset($results[$i][$ldap_result_first_name][0]) ? $results[$i][$ldap_result_first_name][0] : "";
-                $item["email"] = isset($results[$i][$ldap_result_email][0]) ? $results[$i][$ldap_result_email][0] : "" ;
-                $item["ldap_location_override"] = isset($results[$i]["ldap_location_override"]) ? $results[$i]["ldap_location_override"]:"";
-                $item["location_id"] = isset($results[$i]["location_id"]) ? $results[$i]["location_id"]:"";
-
-                if( array_key_exists('useraccountcontrol', $results[$i]) ) {
-                $enabled_accounts = [
-                        '512', '544', '66048', '66080', '262656', '262688', '328192', '328224'
-                    ];
-                    $item['activated'] = ( in_array($results[$i]['useraccountcontrol'][0], $enabled_accounts) ) ? 1 : 0;
-                } else {
-                    $item['activated'] = 0;
-                }
-
-                // User exists
-                $item["createorupdate"] = 'updated';
-                if (!$user = User::where('username', $item["username"])->first()) {
-                    $user = new User;
-                    $user->password = $pass;
-                    $item["createorupdate"] = 'created';
-                }
-
-                 // Create the user if they don't exist.
-                $user->first_name = $item["firstname"];
-                $user->last_name = $item["lastname"];
-                $user->username = $item["username"];
-                $user->email = $item["email"];
-                $user->employee_num = e($item["employee_number"]);
-                $user->activated = $item['activated'];
-                
-                if ($item['ldap_location_override'] == true) {
-                    $user->location_id = $item['location_id'];
-                } else if ($request->input('location_id')!='') {
-                    $user->location_id = e($request->input('location_id'));
-                }
-                $user->notes = 'Imported from LDAP';
-                $user->ldap_import = 1;
-
-                $errors = '';
-
-                if ($user->save()) {
-                    $item["note"] = $item["createorupdate"];
-                    $item["status"]='success';
-                } else {
-                    foreach ($user->getErrors()->getMessages() as $key => $err) {
-                        $errors .='<li>'.$err[0];
-                    }
-                    $item["note"] = $errors;
-                    $item["status"]='error';
-                }
-                array_push($summary, $item);
-            }
-        }
-        return redirect()->route('ldap/user')->with('success', "LDAP Import successful.")->with('summary', $summary);
     }
     
 

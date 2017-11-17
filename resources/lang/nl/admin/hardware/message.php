@@ -24,8 +24,8 @@ return array(
     ),
 
     'audit' => array(
-        'error'   		=> 'Asset audit was unsuccessful. Please try again.',
-        'success' 		=> 'Asset audit successfully logged.'
+        'error'   		=> 'Product audit is mislukt. probeer het nogmaals.',
+        'success' 		=> 'Product audit succesvol gelogd.'
     ),
 
 
@@ -53,7 +53,7 @@ return array(
     'delete' => array(
         'confirm'   	=> 'Weet je zeker dat je dit product wilt verwijderen?',
         'error'   		=> 'Er was een probleem tijdens het verwijderen van het product. Probeer opnieuw.',
-        'nothing_updated'   => 'No assets were selected, so nothing was deleted.',
+        'nothing_updated'   => 'Er was geen product geselecteerd dus is er niks verwijderd.',
         'success' 		=> 'Het product is met succes verwijderd.'
     ),
 
@@ -61,7 +61,8 @@ return array(
         'error'   		=> 'Product is niet uitgecheckt, probeer het opnieuw',
         'success' 		=> 'Product is met succes uitgecheckt.',
         'user_does_not_exist' => 'De gebruiker is ongeldig. Probeer het opnieuw.',
-        'not_available' => 'Dat item is niet beschikbaar om uit te leveren!'
+        'not_available' => 'Dat item is niet beschikbaar om uit te leveren!',
+        'no_assets_selected' => 'You must select at least one asset from the list'
     ),
 
     'checkin' => array(

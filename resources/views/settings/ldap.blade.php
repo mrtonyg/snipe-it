@@ -34,9 +34,13 @@
     @else
 
 
-    {{ Form::open(['method' => 'POST', 'files' => true, 'class' => 'form-horizontal', 'role' => 'form' ]) }}
+    {{ Form::open(['method' => 'POST', 'files' => false, 'autocomplete' => 'false', 'class' => 'form-horizontal', 'role' => 'form' ]) }}
     <!-- CSRF Token -->
     {{csrf_field()}}
+
+    <!-- this is a hack to prevent Chrome from trying to autocomplete fields -->
+    <input type="text" name="prevent_autofill" id="prevent_autofill" value="" style="display:none;" />
+    <input type="password" name="password_fake" id="password_fake" value="" style="display:none;" />
 
     <div class="row">
         <div class="col-sm-10 col-sm-offset-1 col-md-8 col-md-offset-2">
@@ -328,26 +332,75 @@
                         </div>
 
 
+                        @if ($setting->ldap_enabled)
                         <!-- LDAP test -->
-                        <div class="form-group {{ $errors->has('ldap_email') ? 'error' : '' }}">
+                        <div class="form-group">
                             <div class="col-md-3">
-                                Test LDAP Connection
+                                {{ Form::label('test_ldap_sync', 'Test LDAP Sync') }}
+                            </div>
+                            <div class="col-md-9" id="ldaptestrow">
+                                        <a class="btn btn-default btn-sm pull-left" id="ldaptest" style="margin-right: 10px;">Test LDAP</a>
+                            </div>
+                            <div class="col-md-9 col-md-offset-3">
+                                <span id="ldaptesticon"></span>
+                                <span id="ldaptestresult"></span>
+                                <span id="ldapteststatus"></span>
+                            </div>
+                            <div class="col-md-9 col-md-offset-3">
+                                <p class="help-block">{{ trans('admin/settings/general.ldap_login_sync_help') }}</p>
+                            </div>
+
+                        </div>
+                        <!-- LDAP Login test -->
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                {{ Form::label('test_ldap_login', 'Test LDAP Login') }}
                             </div>
                             <div class="col-md-9">
-                                <div id="ldaptestrow">
-                                    <div class="col-md-8">
-                                        <a class="btn btn-default btn-sm pull-left" id="ldaptest" style="margin-right: 10px;"> Test LDAP</a>
-                                        <span id="ldaptesticon"></span>
-                                        <span id="ldaptestresult"></span>
-                                        <span id="ldapteststatus"></span>
-                                    </div>
+                                <div class="row">
+                                <div class="col-md-4">
+                                    <input type="text" name="ldaptest_user" id="ldaptest_user"  class="form-control" placeholder="LDAP username">
                                 </div>
+                                <div class="col-md-4">
+                                <input type="password" name="ldaptest_password" id="ldaptest_password" class="form-control" placeholder="LDAP password">
+                                </div>
+                                <div class="col-md-3">
+                                    <a class="btn btn-default btn-sm" id="ldaptestlogin" style="margin-right: 10px;">Test LDAP</a>
+                                </div>
+
+
                             </div>
+                            </div>
+                            <div class="col-md-9 col-md-offset-3">
+                                <span id="ldaptestloginicon"></span>
+                                <span id="ldaptestloginresult"></span>
+                                <span id="ldaptestloginstatus"></span>
+                            </div>
+                            <div class="col-md-9 col-md-offset-3">
+                                <p class="help-block">{{ trans('admin/settings/general.ldap_login_test_help') }}</p>
+                            </div>
+
                         </div>
+                       @endif
+
+                        <!-- LDAP Forgotten password -->
+                        <div class="form-group {{ $errors->has('custom_forgot_pass_url') ? 'error' : '' }}">
+                            <div class="col-md-3">
+                                {{ Form::label('custom_forgot_pass_url', trans('admin/settings/general.custom_forgot_pass_url')) }}
+                            </div>
+                            <div class="col-md-9">
+                                @if (config('app.lock_passwords')===true)
+                                    {{ Form::text('custom_forgot_pass_url', Input::old('custom_forgot_pass_url', $setting->custom_forgot_pass_url), array('class' => 'form-control', 'disabled'=>'disabled','placeholder' => 'https://my.ldapserver-forgotpass.com')) }}
+                                @else
+                                    {{ Form::text('custom_forgot_pass_url', Input::old('custom_forgot_pass_url', $setting->custom_forgot_pass_url), array('class' => 'form-control','placeholder' => 'https://my.ldapserver-forgotpass.com')) }}
+                                @endif
+                                <p class="help-block">{{ trans('admin/settings/general.custom_forgot_pass_url_help') }}</p>
+                                {!! $errors->first('custom_forgot_pass_url', '<span class="alert-msg">:message</span>') !!}
+                            </div>
+                        </div><!-- LDAP Server -->
 
 
                     </div>
-
                 </div> <!--/.box-body-->
                 <div class="box-footer">
                     <div class="text-left col-md-6">
@@ -372,34 +425,135 @@
 @stop
 
 @section('moar_scripts')
-    <script>
+    <script nonce="{{ csrf_token() }}">
         $("#ldaptest").click(function(){
-            $("#ldaptestrow").removeClass('success');
-            $("#ldaptestrow").removeClass('danger');
+            $("#ldaptestrow").removeClass('text-success');
+            $("#ldaptestrow").removeClass('text-danger');
             $("#ldapteststatus").html('');
-            $("#ldaptesticon").html('<i class="fa fa-spinner spin"></i>');
+            $("#ldaptesticon").html('<i class="fa fa-spinner spin"></i> Testing LDAP Binding...');
             $.ajax({
                 url: '{{ route('api.settings.ldaptest') }}',
                 type: 'GET',
+                headers: {
+                    "X-Requested-With": 'XMLHttpRequest',
+                    "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr('content')
+                },
                 data: {},
                 dataType: 'json',
 
                 success: function (data) {
-                    // console.dir(data);
-                    //console.log(data.responseJSON.message);
                     $("#ldaptesticon").html('');
-                    $("#ldaptestrow").addClass('success');
-                    $("#ldapteststatus").html('<i class="fa fa-check text-success"></i> It worked!');
+                    $("#ldapteststatus").addClass('text-success');
+                    $("#ldapteststatus").html('<i class="fa fa-check text-success"></i> Connection to LDAP server established!');
                 },
 
                 error: function (data) {
-                    console.dir(data);
-                    console.log(data.responseJSON.message);
+
+                    if (data.responseJSON) {
+                        var bind_errors = data.responseJSON.message;
+                    } else {
+                        var bind_errors;
+                    }
+
+                    var bind_error_text;
+
+
                     $("#ldaptesticon").html('');
-                    $("#ldaptestrow").addClass('danger');
+                    $("#ldapteststatus").addClass('text-danger');
                     $("#ldaptesticon").html('<i class="fa fa-exclamation-triangle text-danger"></i>');
-                    $('#ldapteststatus').text(data.responseJSON.message);
+
+                    if (data.status == 500) {
+                        $('#ldapteststatus').html('500 Server Error');
+                    } else if (data.status == 400) {
+
+                        if (typeof bind_errors !='string') {
+
+                            for (i = 0; i < bind_errors.length; i++) {
+                                if (bind_errors[i]) {
+                                    bind_error_text += '<li>Error: ' + bind_errors[i];
+                                }
+
+                            }
+
+                        } else {
+                            error_text = bind_errors;
+                        }
+                        $('#ldapteststatus').html(bind_error_text);
+                    } else {
+                        $('#ldapteststatus').html(data.responseText.message);
+                    }
                 }
+
+
+            });
+        });
+
+        $("#ldaptestlogin").click(function(){
+            $("#ldaptestloginrow").removeClass('text-success');
+            $("#ldaptestloginrow").removeClass('text-danger');
+            $("#ldaptestloginstatus").removeClass('text-danger');
+            $("#ldaptestloginstatus").html('');
+            $("#ldaptestloginicon").html('<i class="fa fa-spinner spin"></i> Testing LDAP Authentication...');
+            $.ajax({
+                url: '{{ route('api.settings.ldaptestlogin') }}',
+                type: 'POST',
+                headers: {
+                    "X-Requested-With": 'XMLHttpRequest',
+                    "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr('content')
+                },
+                data: {
+                    'ldaptest_user': $('#ldaptest_user').val(),
+                    'ldaptest_password': $('#ldaptest_password').val()
+                },
+
+                dataType: 'json',
+
+                success: function (data) {
+                    $("#ldaptestloginicon").html('');
+                    $("#ldaptestloginrow").addClass('text-success');
+                    $("#ldaptestloginstatus").addClass('text-success');
+                    $("#ldaptestloginstatus").html('<i class="fa fa-check text-success"></i> User authenticated against LDAP successfully!');
+                },
+
+                error: function (data) {
+
+                    if (data.responseJSON) {
+                        var errors = data.responseJSON.message;
+                    } else {
+                        var errors;
+                    }
+
+                    var error_text = '';
+
+                    $("#ldaptestloginicon").html('');
+                    $("#ldaptestloginstatus").addClass('text-danger');
+                    $("#ldaptestloginicon").html('<i class="fa fa-exclamation-triangle text-danger"></i>');
+
+                    if (data.status == 500) {
+                        $('#ldaptestloginstatus').html('500 Server Error');
+                    } else if (data.status == 400) {
+
+                        if (typeof errors !='string') {
+
+                            for (i = 0; i < errors.length; i++) {
+                                if (errors[i]) {
+                                    error_text += '<li>Error: ' + errors[i];
+                                }
+
+                            }
+
+                        } else {
+                            error_text = errors;
+                        }
+
+                        $('#ldaptestloginstatus').html(error_text);
+
+                    } else {
+                        $('#ldaptestloginstatus').html(data.responseText.message);
+                    }
+                }
+
+
 
 
             });
@@ -408,4 +562,5 @@
 
 
     </script>
+
 @stop

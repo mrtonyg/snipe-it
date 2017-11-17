@@ -12,7 +12,12 @@ class UserSeeder extends Seeder
      */
     public function run()
     {
-        // Don't truncate the user column, that might suck.
-        factory(User::class, 10)->create();
+        User::truncate();
+        factory(User::class, 1)->states('first-admin')->create();
+        factory(User::class, 1)->states('snipe-admin')->create();
+        factory(User::class, 3)->states('superuser')->create();
+        factory(User::class, 3)->states('admin')->create();
+        factory(User::class, 50)->states('view-assets')->create();
+
     }
 }

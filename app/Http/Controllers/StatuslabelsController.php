@@ -32,18 +32,17 @@ class StatuslabelsController extends Controller
 
     public function index()
     {
-        return view('statuslabels/index', compact('statuslabels'));
+        return view('statuslabels.index', compact('statuslabels'));
     }
 
     public function show($id)
     {
-        $statuslabel = Statuslabel::find($id);
 
-        if (isset($statuslabel->id)) {
-            return view('statuslabels/view', compact('statuslabel'));
+        if ($statuslabel = Statuslabel::find($id)) {
+            return view('statuslabels.view')->with('statuslabel', $statuslabel);
         }
 
-        return redirect()->route('statuslabels.index')->with('error', trans('admin/locations/message.does_not_exist', compact('id')));
+        return redirect()->route('statuslabels.index')->with('error', trans('admin/statuslabels/message.does_not_exist', compact('id')));
     }
 
 
@@ -200,17 +199,15 @@ class StatuslabelsController extends Controller
     {
         // Check if the Statuslabel exists
         if (is_null($statuslabel = Statuslabel::find($statuslabelId))) {
-            // Redirect to the blogs management page
             return redirect()->route('statuslabels.index')->with('error', trans('admin/statuslabels/message.not_found'));
         }
 
-
-        if ($statuslabel->has_assets() == 0) {
+        // Check that there are no assets associated
+        if ($statuslabel->assets()->count() == 0) {
             $statuslabel->delete();
-            // Redirect to the statuslabels management page
             return redirect()->route('statuslabels.index')->with('success', trans('admin/statuslabels/message.delete.success'));
         }
-        // Redirect to the asset management page
+
         return redirect()->route('statuslabels.index')->with('error', trans('admin/statuslabels/message.assoc_assets'));
     }
 

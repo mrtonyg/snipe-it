@@ -25,8 +25,9 @@ class CategoriesTransformer
             $array = [
                 'id' => (int) $category->id,
                 'name' => e($category->name),
+                'image' =>   ($category->image) ? app('categories_upload_url').e($category->image) : null,
                 'type' => e($category->category_type),
-                'use_default_eula' => ($category->use_default_eula =='1') ? true : false,
+                'eula' => ($category->getEula()) ? true : false,
                 'checkin_email' => ($category->checkin_email =='1') ? true : false,
                 'require_acceptance' => ($category->require_acceptance =='1') ? true : false,
                 'assets_count' => $category->assets_count,
@@ -39,7 +40,7 @@ class CategoriesTransformer
 
             $permissions_array['available_actions'] = [
                 'update' => Gate::allows('update', Category::class) ? true : false,
-                'delete' => Gate::allows('delete', Category::class) ? true : false,
+                'delete' => (Gate::allows('delete', Category::class) && ($category->assets_count == 0) && ($category->accessories_count == 0) && ($category->consumables_count == 0) && ($category->components_count == 0)) ? true : false,
             ];
 
             $array += $permissions_array;

@@ -34,7 +34,7 @@ class ComponentsController extends Controller
         $offset = request('offset', 0);
         $limit = request('limit', 50);
 
-        $allowed_columns = ['id','name','min_amt','order_number','serial','purchase_date','purchase_cost','company','category','qty','location'];
+        $allowed_columns = ['id','name','min_amt','order_number','serial','purchase_date','purchase_cost','company','category','qty','location','image'];
         $order = $request->input('order') === 'asc' ? 'asc' : 'desc';
         $sort = in_array($request->input('sort'), $allowed_columns) ? $request->input('sort') : 'created_at';
 
@@ -158,6 +158,6 @@ class ComponentsController extends Controller
         $limit = $request->input('limit', 50);
         $total = $assets->count();
         $assets = $assets->skip($offset)->take($limit)->get();
-        return (new ComponentsAssetsTransformer)->transformAssets($assets, $total);
+        return (new ComponentsTransformer)->transformCheckedoutComponents($assets, $total);
     }
 }

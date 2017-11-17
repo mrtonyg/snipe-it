@@ -18,6 +18,8 @@ use Illuminate\Http\Request;
 use Slack;
 use Str;
 use View;
+use Image;
+use App\Http\Requests\ImageUploadRequest;
 
 /** This controller handles all actions related to Accessories for
  * the Snipe-IT Asset Management application.
@@ -52,13 +54,9 @@ class AccessoriesController extends Controller
     public function create(Request $request)
     {
         $this->authorize('create', Accessory::class);
-        // Show the page
-        return view('accessories/edit')
-          ->with('item', new Accessory)
-          ->with('category_list', Helper::categoryList('accessory'))
-          ->with('company_list', Helper::companyList())
-          ->with('location_list', Helper::locationsList())
-          ->with('manufacturer_list', Helper::manufacturerList());
+        $category_type = 'accessory';
+        return view('accessories/edit')->with('category_type', $category_type)
+          ->with('item', new Accessory);
     }
 
 
@@ -68,7 +66,7 @@ class AccessoriesController extends Controller
    * @author [A. Gianotto] [<snipe@snipe.net>]
    * @return Redirect
    */
-    public function store(Request $request)
+    public function store(ImageUploadRequest $request)
     {
         $this->authorize(Accessory::class);
         // create a new model instance
@@ -87,6 +85,28 @@ class AccessoriesController extends Controller
         $accessory->purchase_cost           = Helper::ParseFloat(request('purchase_cost'));
         $accessory->qty                     = request('qty');
         $accessory->user_id                 = Auth::user()->id;
+        $accessory->supplier_id             = request('supplier_id');
+
+        if ($request->hasFile('image')) {
+
+            if (!config('app.lock_passwords')) {
+                $image = $request->file('image');
+                $ext = $image->getClientOriginalExtension();
+                $file_name = "accessory-".str_random(18).'.'.$ext;
+                $path = public_path('/uploads/accessories');
+                if ($image->getClientOriginalExtension()!='svg') {
+                    Image::make($image->getRealPath())->resize(null, 250, function ($constraint) {
+                        $constraint->aspectRatio();
+                        $constraint->upsize();
+                    })->save($path.'/'.$file_name);
+                } else {
+                    $image->move($path, $file_name);
+                }
+                $accessory->image = $file_name;
+            }
+        }
+
+
 
         // Was the accessory created?
         if ($accessory->save()) {
@@ -105,18 +125,15 @@ class AccessoriesController extends Controller
    */
     public function edit(Request $request, $accessoryId = null)
     {
-        // Check if the accessory exists
-        if (is_null($item = Accessory::find($accessoryId))) {
-            return redirect()->route('accessories.index')->with('error', trans('admin/accessories/message.does_not_exist'));
+
+        if ($item = Accessory::find($accessoryId)) {
+            $this->authorize($item);
+            $category_type = 'accessory';
+            return view('accessories/edit', compact('item'))->with('category_type', $category_type);
         }
 
-        $this->authorize($item);
+        return redirect()->route('accessories.index')->with('error', trans('admin/accessories/message.does_not_exist'));
 
-        return view('accessories/edit', compact('item'))
-          ->with('category_list', Helper::categoryList('accessory'))
-          ->with('company_list', Helper::companyList())
-          ->with('location_list', Helper::locationsList())
-          ->with('manufacturer_list', Helper::manufacturerList());
     }
 
 
@@ -127,7 +144,7 @@ class AccessoriesController extends Controller
    * @param  int  $accessoryId
    * @return Redirect
    */
-    public function update(Request $request, $accessoryId = null)
+    public function update(ImageUploadRequest $request, $accessoryId = null)
     {
         if (is_null($accessory = Accessory::find($accessoryId))) {
             return redirect()->route('accessories.index')->with('error', trans('admin/accessories/message.does_not_exist'));
@@ -144,11 +161,38 @@ class AccessoriesController extends Controller
         $accessory->manufacturer_id         = request('manufacturer_id');
         $accessory->order_number            = request('order_number');
         $accessory->model_number            = request('model_number');
-        $accessory->purchase_date       = request('purchase_date');
-        $accessory->purchase_cost       = request('purchase_cost');
+        $accessory->purchase_date           = request('purchase_date');
+        $accessory->purchase_cost           = request('purchase_cost');
         $accessory->qty                     = request('qty');
+        $accessory->supplier_id             = request('supplier_id');
 
-      // Was the accessory updated?
+        if ($request->hasFile('image')) {
+            
+            if (!config('app.lock_passwords')) {
+                
+                
+                $image = $request->file('image');
+                $ext = $image->getClientOriginalExtension();
+                $file_name = "accessory-".str_random(18).'.'.$ext;
+                $path = public_path('/uploads/accessories');
+                if ($image->getClientOriginalExtension()!='svg') {
+                    Image::make($image->getRealPath())->resize(null, 250, function ($constraint) {
+                        $constraint->aspectRatio();
+                        $constraint->upsize();
+                    })->save($path.'/'.$file_name);
+                } else {
+                    $image->move($path, $file_name);
+                }
+                if (($accessory->image) && (file_exists($path.'/'.$accessory->image))) {
+                    unlink($path.'/'.$accessory->image);
+                }
+
+                $accessory->image = $file_name;
+            }
+        }
+
+
+        // Was the accessory updated?
         if ($accessory->save()) {
             return redirect()->route('accessories.index')->with('success', trans('admin/accessories/message.update.success'));
         }
@@ -197,11 +241,7 @@ class AccessoriesController extends Controller
         if (isset($accessory->id)) {
             return view('accessories/view', compact('accessory'));
         }
-        // Prepare the error message
-        $error = trans('admin/accessories/message.does_not_exist', compact('id'));
-
-        // Redirect to the user management page
-        return redirect()->route('accessories')->with('error', $error);
+        return redirect()->route('accessories.index')->with('error', trans('admin/accessories/message.does_not_exist', compact('id')));
     }
 
   /**
@@ -222,7 +262,7 @@ class AccessoriesController extends Controller
         $this->authorize('checkout', $accessory);
 
         // Get the dropdown of users and then pass it to the checkout view
-        return view('accessories/checkout', compact('accessory'))->with('users_list', Helper::usersList());
+        return view('accessories/checkout', compact('accessory'));
 
     }
 
@@ -247,7 +287,7 @@ class AccessoriesController extends Controller
         $this->authorize('checkout', $accessory);
 
         if (!$user = User::find(Input::get('assigned_to'))) {
-            return redirect()->route('accessories.index')->with('error', trans('admin/accessories/message.not_found'));
+            return redirect()->route('checkout/accessory', $accessory->id)->with('error', trans('admin/accessories/message.checkout.user_does_not_exist'));
         }
 
       // Update the accessory data
@@ -274,7 +314,8 @@ class AccessoriesController extends Controller
         $data['note'] = $logaction->note;
         $data['require_acceptance'] = $accessory->requireAcceptance();
         // TODO: Port this to new mail notifications
-        if (($accessory->requireAcceptance()=='1')  || ($accessory->getEula())) {
+
+        if ((($accessory->requireAcceptance()=='1')  || ($accessory->getEula())) && ($user->email!='')) {
 
             Mail::send('emails.accept-accessory', $data, function ($m) use ($user) {
                 $m->to($user->email, $user->first_name . ' ' . $user->last_name);
@@ -351,7 +392,7 @@ class AccessoriesController extends Controller
             $data['item_tag'] = '';
             $data['note'] = e($logaction->note);
 
-            if (($accessory->checkin_email()=='1')) {
+            if ((($accessory->checkin_email()=='1')) && ($user->email!='')) {
 
                 Mail::send('emails.checkin-asset', $data, function ($m) use ($user) {
                     $m->to($user->email, $user->first_name . ' ' . $user->last_name);
@@ -369,143 +410,5 @@ class AccessoriesController extends Controller
         return redirect()->route('accessories.index')->with('error', trans('admin/accessories/message.checkin.error'));
     }
 
-    /**
-     * Generates the JSON response for accessories listing view.
-     *
-     * Example:
-     * {
-     *  "actions": "(links to available actions)",
-     *  "category": "(link to category)",
-     *  "company": "My Company",
-     *  "location":  "My Location",
-     *  "min_amt": 2,
-     *  "name":  "(link to accessory),
-     *  "numRemaining": 6,
-     *  "order_number": null,
-     *  "purchase_cost": "0.00",
-     *  "purchase_date": null,
-     *  "qty": 7
-     *  },
-     *
-     * The names of the fields in the returns JSON correspond directly to the the
-     * names of the fields in the bootstrap-tables in the view.
-     *
-     * For debugging, see at /api/accessories/list
-     *
-     * @author [A. Gianotto] [<snipe@snipe.net>]
-     * @param Request $request
-     * @return string JSON containing accessories and their associated atrributes.
-     * @internal param int $accessoryId
-     */
-    public function getDatatable(Request $request)
-    {
-        $this->authorize('index', Accessory::class);
-        $accessories = Company::scopeCompanyables(
-            Accessory::select('accessories.*')
-            ->whereNull('accessories.deleted_at')
-            ->with('category', 'company', 'manufacturer', 'users', 'location')
-        );
-        if (Input::has('search')) {
-            $accessories = $accessories->TextSearch(e(Input::get('search')));
-        }
-        $offset = request('offset', 0);
-        $limit = request('limit', 50);
 
-        $allowed_columns = ['name','min_amt','order_number','purchase_date','purchase_cost','company','category','model_number', 'manufacturer', 'location'];
-        $order = Input::get('order') === 'asc' ? 'asc' : 'desc';
-        $sort = in_array(Input::get('sort'), $allowed_columns) ? e(Input::get('sort')) : 'created_at';
-
-        switch ($sort) {
-            case 'category':
-                $accessories = $accessories->OrderCategory($order);
-                break;
-            case 'company':
-                $accessories = $accessories->OrderCompany($order);
-                break;
-            case 'location':
-                $accessories = $accessories->OrderLocation($order);
-                break;
-            case 'manufacturer':
-                $accessories = $accessories->OrderManufacturer($order);
-                break;
-            default:
-                $accessories = $accessories->orderBy($sort, $order);
-                break;
-        }
-
-        $accessCount = $accessories->count();
-        $accessories = $accessories->skip($offset)->take($limit)->get();
-
-        $rows = array();
-
-        foreach ($accessories as $accessory) {
-            $rows[] = $accessory->present()->forDataTable();
-        }
-
-        $data = array('total'=>$accessCount, 'rows'=>$rows);
-
-        return $data;
-    }
-
-
-  /**
-  * Generates the JSON response for accessory detail view.
-  *
-  * Example:
-  * <code>
-  * {
-  * "rows": [
-  * {
-  * "actions": "(link to available actions)",
-  * "name": "(link to user)"
-  * }
-  * ],
-  * "total": 1
-  * }
-  * </code>
-  *
-  * The names of the fields in the returns JSON correspond directly to the the
-  * names of the fields in the bootstrap-tables in the view.
-  *
-  * For debugging, see at /api/accessories/$accessoryID/view
-  *
-  * @author [A. Gianotto] [<snipe@snipe.net>]
-  * @param  int  $accessoryId
-  * @return string JSON containing accessories and their associated atrributes.
-  **/
-    public function getDataView(Request $request, $accessoryID)
-    {
-        $accessory = Accessory::find($accessoryID);
-
-        if (!Company::isCurrentUserHasAccess($accessory)) {
-            return ['total' => 0, 'rows' => []];
-        }
-
-        $accessory_users = $accessory->users;
-        $count = $accessory_users->count();
-
-        $rows = array();
-
-        foreach ($accessory_users as $user) {
-            $actions = '';
-            if (Gate::allows('checkin', $accessory)) {
-                $actions .= Helper::generateDatatableButton('checkin', route('checkin/accessory', $user->pivot->id));
-            }
-
-            if (Gate::allows('view', $user)) {
-                $name = (string) link_to_route('users.show', e($user->present()->fullName()), [$user->id]);
-            } else {
-                $name = e($user->present()->fullName());
-            }
-
-            $rows[] = array(
-              'name'          => $name,
-              'actions'       => $actions
-              );
-        }
-
-        $data = array('total'=>$count, 'rows'=>$rows);
-
-        return $data;
-    }
 }

@@ -68,17 +68,12 @@ class ViewAssetsController extends Controller
     public function getRequestableIndex()
     {
 
-        $assets = Asset::with('model', 'defaultLoc', 'assetloc', 'assignedTo', 'requests')->Hardware()->RequestableAssets()->get();
+        $assets = Asset::with('model', 'defaultLoc', 'location', 'assignedTo', 'requests')->Hardware()->RequestableAssets()->get();
         $models = AssetModel::with('category', 'requests', 'assets')->RequestableModels()->get();
 
         return view('account/requestable-assets', compact('user', 'assets', 'models'));
     }
 
-    public function getRequestedIndex()
-    {
-        $requestedItems = CheckoutRequest::with('user', 'requestedItem')->get();
-        return view('admin/requested-assets', compact('requestedItems'));
-    }
 
 
     public function getRequestItem($itemType, $itemId = null)
@@ -289,9 +284,10 @@ class ViewAssetsController extends Controller
     public function getAcceptAsset($logID = null)
     {
 
-        if (!$findlog = Actionlog::where('id', $logID)->first()) {
-            echo 'no record';
-            //return redirect()->to('account')->with('error', trans('admin/hardware/message.does_not_exist'));
+        $findlog = Actionlog::where('id', $logID)->first();
+
+        if (!$findlog) {
+            return redirect()->to('account/view-assets')->with('error', 'No matching record.');
         }
 
         if ($findlog->accepted_id!='') {

@@ -58,8 +58,8 @@ tr {
         </td>
 
         <td>
-            <button type="button" class="btn btn-default" @click="processDetail = false">Cancel</button>
-            <button type="submit" class="btn btn-primary" @click="postSave">Import</button>
+            <button type="button" class="btn btn-sm btn-default" @click="processDetail = false">Cancel</button>
+            <button type="submit" class="btn btn-sm btn-primary" @click="postSave">Import</button>
             <div class="alert alert-success col-md-5 col-md-offset-1" style="text-align:left" v-if="statusText">{{ this.statusText }}</div>
         </td>
     </tr>
@@ -67,7 +67,7 @@ tr {
 
 <script>
     export default {
-        props: ['file'],
+        props: ['file', 'customFields'],
         data() {
             return {
                 activeFile: this.file,
@@ -130,14 +130,13 @@ tr {
                         {id: 'jobtitle', text: 'Job Title' },
                         {id: 'phone_number', text: 'Phone Number' },
                     ],
-                    customFields: [],
+                    customFields: this.customFields,
                 },
                 columnMappings: this.file.field_map || {},
                 activeColumn: null,
             }
         },
         created() {
-            this.fetchCustomFields();
             window.eventHub.$on('showDetails', this.toggleExtendedDisplay)
             this.populateSelect2ActiveItems();
         },
@@ -155,36 +154,24 @@ tr {
             }
         },
         methods: {
-            fetchCustomFields() {
-                this.$http.get('/api/v1/fields')
-                .then( ({data}) => {
-                    data = data.rows;
-                    data.forEach((item) => {
-                        this.columnOptions.customFields.push({
-                            'id': item.db_column_name,
-                            'text': item.name,
-                        })
-                    })
-                });
-            },
             postSave() {
                 this.statusText = "Processing...";
-                this.$http.post('/api/v1/imports/process/'+this.file.id, {
+                this.$http.post(route('api.imports.importFile', this.file.id), {
                     'import-update': this.options.update,
                     'import-type': this.options.importType,
                     'column-mappings': this.columnMappings
-                }).then( (response) => {
+                }).then( ({body}) => {
                     // Success
                     this.statusText = "Success... Redirecting.";
-                    window.location.href = response.body.messages.redirect_url;
-                }, (response) => {
+                    window.location.href = body.messages.redirect_url;
+                }, ({body}) => {
                     // Failure
-                    if(response.body.status == 'import-errors') {
-                        window.eventHub.$emit('importErrors', response.body.messages);
+                    if(body.status == 'import-errors') {
+                        window.eventHub.$emit('importErrors', body.messages);
                         this.statusText = "Error";
                     } else {
                         this.$emit('alert', {
-                            message: response.body.messages,
+                            message: body.messages,
                             type: "danger",
                             visible: true,
                         })

@@ -755,6 +755,60 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "imjennyli",
+      "name": "Jenny Li",
+      "avatar_url": "https://avatars3.githubusercontent.com/u/404729?v=4",
+      "profile": "https://github.com/imjennyli",
+      "contributions": [
+        "doc"
+      ]
+    },
+    {
+      "login": "GeoffYoung",
+      "name": "Geoff Young",
+      "avatar_url": "https://avatars0.githubusercontent.com/u/869227?v=4",
+      "profile": "https://github.com/GeoffYoung",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "BlueHatbRit",
+      "name": "Elliot Blackburn",
+      "avatar_url": "https://avatars3.githubusercontent.com/u/1068477?v=4",
+      "profile": "http://www.elliotblackburn.com",
+      "contributions": [
+        "doc"
+      ]
+    },
+    {
+      "login": "TonisOrmisson",
+      "name": "Tõnis Ormisson",
+      "avatar_url": "https://avatars1.githubusercontent.com/u/6357451?v=4",
+      "profile": "http://andmemasin.eu",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "thakilla",
+      "name": "Nicolai Essig",
+      "avatar_url": "https://avatars0.githubusercontent.com/u/449411?v=4",
+      "profile": "http://www.nicolai-essig.de",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "techincolor",
+      "name": "Danielle",
+      "avatar_url": "https://avatars1.githubusercontent.com/u/14809698?v=4",
+      "profile": "https://github.com/techincolor",
+      "contributions": [
+        "doc"
+      ]
     }
   ]
 }

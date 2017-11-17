@@ -43,6 +43,14 @@ class ComponentPresenter extends Presenter
                 "visible" => true,
                 "formatter" => 'componentsLinkFormatter',
             ], [
+                "field" => "image",
+                "searchable" => false,
+                "sortable" => true,
+                "switchable" => true,
+                "title" => trans('general.image'),
+                "visible" => false,
+                "formatter" => 'imageFormatter',
+            ], [
                 "field" => "category",
                 "searchable" => true,
                 "sortable" => true,
@@ -85,6 +93,7 @@ class ComponentPresenter extends Presenter
                 "sortable" => true,
                 "title" => trans('general.purchase_cost'),
                 "visible" => true,
+                "footerFormatter" => 'sumFormatter',
             ],
         ];
 
@@ -118,6 +127,15 @@ class ComponentPresenter extends Presenter
     public function nameUrl()
     {
         return (string) link_to_route('consumables.show', e($this->name), $this->id);
+    }
+
+    /**
+     * Url to view this item.
+     * @return string
+     */
+    public function viewUrl()
+    {
+        return route('accessories.show', $this->id);
     }
 
 

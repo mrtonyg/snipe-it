@@ -87,8 +87,8 @@
                             &nbsp; &nbsp;</span>
                         </span>
                         @endif
-                        {{ $asset->present()->statusText() }}
-                        ({{ $asset->assetstatus->getStatuslabelType() }})
+                        <a href="{{ route('statuslabels.show', $asset->assetstatus->id) }}">{{ $asset->assetstatus->name }}</a>
+                          <label class="label label-default">{{ $asset->present()->statusMeta }}</label>
                       </td>
                     </tr>
                     @endif
@@ -224,10 +224,10 @@
                       <tr>
                         <td>{{ trans('admin/hardware/form.cost') }}</td>
                         <td>
-                          @if (($asset->id) && ($asset->userloc))
-                            {{ $asset->userloc->currency }}
-                          @elseif (($asset->id) && ($asset->assetloc))
-                            {{ $asset->assetloc->currency }}
+                          @if (($asset->id) && ($asset->location))
+                            {{ $asset->location->currency }}
+                          @elseif (($asset->id) && ($asset->location))
+                            {{ $asset->location->currency }}
                           @else
                             {{ $snipeSettings->default_currency }}
                           @endif
@@ -335,16 +335,16 @@
                       <td> {!! nl2br(e($asset->notes)) !!}</td>
                     </tr>
 
-                    @if ($asset->assetloc)
+                    @if ($asset->location)
                       <tr>
                         <td>{{ trans('general.location') }}</td>
                         <td>
                           @can('superuser')
-                            <a href="{{ route('locations.show', ['location' => $asset->assetloc->id]) }}">
-                              {{ $asset->assetloc->name }}
+                            <a href="{{ route('locations.show', ['location' => $asset->location->id]) }}">
+                              {{ $asset->location->name }}
                             </a>
                           @else
-                            {{ $asset->assetloc->name }}
+                            {{ $asset->location->name }}
                           @endcan
                         </td>
                       </tr>
@@ -416,19 +416,19 @@
                     <li><i class="fa fa-phone"></i> {{ $asset->assignedTo->phone }}</li>
                   @endif
 
-                  @if (isset($asset->assetLoc))
-                    <li>{{ $asset->assetLoc->name }}</li>
-                    <li>{{ $asset->assetLoc->address }}
-                      @if ($asset->assetLoc->address2!='')
-                      {{ $asset->assetLoc->address2 }}
+                  @if (isset($asset->location))
+                    <li>{{ $asset->location->name }}</li>
+                    <li>{{ $asset->location->address }}
+                      @if ($asset->location->address2!='')
+                      {{ $asset->location->address2 }}
                       @endif
                     </li>
 
-                    <li>{{ $asset->assetLoc->city }}
-                      @if (($asset->assetLoc->city!='') && ($asset->assetLoc->state!=''))
+                    <li>{{ $asset->location->city }}
+                      @if (($asset->location->city!='') && ($asset->location->state!=''))
                           ,
                       @endif
-                      {{ $asset->assetLoc->state }} {{ $asset->assetLoc->zip }}
+                      {{ $asset->location->state }} {{ $asset->location->zip }}
                     </li>
                     @endif
                 </ul>
@@ -544,7 +544,13 @@
                     @foreach ($asset->assetmaintenances as $assetMaintenance)
                       @if (is_null($assetMaintenance->deleted_at))
                         <tr>
-                          <td><a href="{{ route('suppliers.show', $assetMaintenance->supplier_id) }}">{{ $assetMaintenance->supplier->name }}</a></td> 
+                          <td>
+                            @if ($assetMaintenance->supplier)
+                              <a href="{{ route('suppliers.show', $assetMaintenance->supplier_id) }}">{{ $assetMaintenance->supplier->name }}</a>
+                            @else
+                                (deleted supplier)
+                            @endif
+                          </td>
                           <td>{{ $assetMaintenance->title }}</td>
                           <td>{{ $assetMaintenance->asset_maintenance_type }}</td>
                           <td>{{ $assetMaintenance->start_date }}</td>
@@ -603,6 +609,9 @@
                   <th class="col-sm-2" data-field="item" data-formatter="polymorphicItemFormatter">{{ trans('general.item') }}</th>
                   <th class="col-sm-2" data-field="target" data-formatter="polymorphicItemFormatter">{{ trans('general.target') }}</th>
                   <th class="col-sm-2" data-field="note">{{ trans('general.notes') }}</th>
+                  @if  ($snipeSettings->require_accept_signature=='1')
+                    <th class="col-md-3" data-field="signature_file" data-formatter="imageFormatter">{{ trans('general.signature') }}</th>
+                  @endif
                 </tr>
                 </thead>
               </table>
@@ -700,7 +709,7 @@
 @section('moar_scripts')
   @include ('partials.bootstrap-table', ['simple_view' => true])
 
-<script>
+<script nonce="{{ csrf_token() }}">
     $(document).delegate('*[data-toggle="lightbox"]', 'click', function(event) {
         event.preventDefault();
         $(this).ekkoLightbox();

@@ -2,27 +2,49 @@
 
 use App\Models\Company;
 
-$factory->define(App\Models\User::class, function (Faker\Generator $faker) {
+$password = bcrypt('password');
+
+$factory->define(App\Models\User::class, function (Faker\Generator $faker) use ($password) {
     return [
         'first_name' => $faker->firstName,
         'last_name' => $faker->lastName,
         'username' => $faker->username,
-        'password' => $faker->password,
+        'password' => $password,
         'permissions' => '{"user":"0"}',
         'email' => $faker->safeEmail,
-        'company_id' => function () {
-                return factory(App\Models\Company::class)->create()->id;
-        },
+        'company_id' => rand(1,4),
         'locale' => $faker->locale,
         'employee_num' => $faker->numberBetween(3500, 35050),
-        'jobtitle' => $faker->word,
+        'jobtitle' => $faker->jobTitle,
+        'department_id' => rand(1,6),
         'phone' => $faker->phoneNumber,
-        'notes' => $faker->sentence,
-        'location_id' => function () {
-            return factory(App\Models\Location::class)->create()->id;
-        },
+        'notes' => 'Created by DB seeder',
+        'location_id' => rand(1,5),
+        'activated' => 1,
     ];
 });
+
+
+$factory->state(App\Models\User::class, 'first-admin', function ($faker) {
+    return [
+        'first_name' => 'Admin',
+        'last_name' => 'User',
+        'username' => 'admin',
+        'permissions' => '{"superuser":"1"}',
+    ];
+});
+
+$factory->state(App\Models\User::class, 'snipe-admin', function ($faker) {
+    return [
+        'first_name' => 'Snipe E.',
+        'last_name' => 'Head',
+        'username' => 'snipe',
+        'email' => 'snipe@snipe.net',
+        'permissions' => '{"superuser":"1"}',
+    ];
+});
+
+
 // USER GLOBAL PERMISSION STATES
 $factory->state(App\Models\User::class, 'superuser', function ($faker) {
     return [
@@ -33,6 +55,7 @@ $factory->state(App\Models\User::class, 'superuser', function ($faker) {
 $factory->state(App\Models\User::class, 'admin', function ($faker) {
     return [
         'permissions' => '{"admin":"1"}',
+        'manager_id' => rand(1,2),
     ];
 });
 // USER ASSET PERMISSION STATES

@@ -25,8 +25,8 @@ return array(
     ),
 
     'audit' => array(
-        'error'   		=> 'Asset audit was unsuccessful. Please try again.',
-        'success' 		=> 'Asset audit successfully logged.'
+        'error'   		=> '資産の監査に失敗しました。もう一度やり直してください。',
+        'success' 		=> '資産の監査ログに記録しました。'
     ),
 
 
@@ -54,7 +54,7 @@ return array(
     'delete' => array(
         'confirm'   	=> 'この資産を削除してもよろしいですか？',
         'error'   		=> '資産を削除する際に問題が発生しました。もう一度やり直して下さい。',
-        'nothing_updated'   => 'No assets were selected, so nothing was deleted.',
+        'nothing_updated'   => '資産が選択されていないため、削除されませんでした。',
         'success' 		=> '資産は正常に削除されました。'
     ),
 
@@ -62,7 +62,8 @@ return array(
         'error'   		=> '資産はチェックアウトされませんでした。もう一度、やり直して下さい。',
         'success' 		=> '資産は正常にチェックアウトされました。',
         'user_does_not_exist' => 'その利用者は不正です。もう一度、やり直して下さい。',
-        'not_available' => 'この資産はチェックアウトできません!'
+        'not_available' => 'この資産はチェックアウトできません!',
+        'no_assets_selected' => 'You must select at least one asset from the list'
     ),
 
     'checkin' => array(

@@ -17,6 +17,7 @@ use App\Models\Company;
 use Config;
 use App\Helpers\Helper;
 use Illuminate\Http\Request;
+use App\Http\Requests\ImageUploadRequest;
 
 use Symfony\Component\HttpFoundation\JsonResponse;
 
@@ -34,7 +35,6 @@ class AssetModelsController extends Controller
     * the content for the accessories listing, which is generated in getDatatable.
     *
     * @author [A. Gianotto] [<snipe@snipe.net>]
-    * @see AssetModelsController::getDatatable() method that generates the JSON response
     * @since [v1.0]
     * @return View
     */
@@ -52,11 +52,9 @@ class AssetModelsController extends Controller
     */
     public function create()
     {
-        // Show the page
-        return view('models/edit')
-        ->with('category_list', Helper::categoryList('asset'))
+        $category_type = 'asset';
+        return view('models/edit')->with('category_type',$category_type)
         ->with('depreciation_list', Helper::depreciationList())
-        ->with('manufacturer_list', Helper::manufacturerList())
         ->with('item', new AssetModel);
     }
 
@@ -68,7 +66,7 @@ class AssetModelsController extends Controller
     * @since [v1.0]
     * @return Redirect
     */
-    public function store(Request $request)
+    public function store(ImageUploadRequest $request)
     {
 
         // Create a new asset model
@@ -90,14 +88,21 @@ class AssetModelsController extends Controller
         }
 
         if (Input::file('image')) {
+
             $image = Input::file('image');
-            $file_name = str_random(25).".".$image->getClientOriginalExtension();
-            $path = public_path('uploads/models/'.$file_name);
-            Image::make($image->getRealPath())->resize(500, null, function ($constraint) {
-                $constraint->aspectRatio();
-                $constraint->upsize();
-            })->save($path);
+            $file_name = str_slug($image->getClientOriginalName()) . "." . $image->getClientOriginalExtension();
+            $path = app('models_upload_path');
+
+            if ($image->getClientOriginalExtension()!='svg') {
+                Image::make($image->getRealPath())->resize(500, null, function ($constraint) {
+                    $constraint->aspectRatio();
+                    $constraint->upsize();
+                })->save($path.'/'.$file_name);
+            } else {
+                $image->move($path, $file_name);
+            }
             $model->image = $file_name;
+
         }
 
             // Was it created?
@@ -157,17 +162,15 @@ class AssetModelsController extends Controller
     */
     public function edit($modelId = null)
     {
-        // Check if the model exists
-        if (is_null($item = AssetModel::find($modelId))) {
-            // Redirect to the model management page
-            return redirect()->route('models.index')->with('error', trans('admin/models/message.does_not_exist'));
+        if ($item = AssetModel::find($modelId)) {
+            $category_type = 'asset';
+            $view = View::make('models/edit', compact('item','category_type'));
+            $view->with('depreciation_list', Helper::depreciationList());
+            return $view;
         }
 
-        $view = View::make('models/edit', compact('item'));
-        $view->with('category_list', Helper::categoryList('asset'));
-        $view->with('depreciation_list', Helper::depreciationList());
-        $view->with('manufacturer_list', Helper::manufacturerList());
-        return $view;
+        return redirect()->route('models.index')->with('error', trans('admin/models/message.does_not_exist'));
+
     }
 
 
@@ -180,7 +183,7 @@ class AssetModelsController extends Controller
     * @param int $modelId
     * @return Redirect
     */
-    public function update(Request $request, $modelId = null)
+    public function update(ImageUploadRequest $request, $modelId = null)
     {
         // Check if the model exists
         if (is_null($model = AssetModel::find($modelId))) {
@@ -188,15 +191,14 @@ class AssetModelsController extends Controller
             return redirect()->route('models.index')->with('error', trans('admin/models/message.does_not_exist'));
         }
 
-        $model->depreciation_id = $request->input('depreciation_id');
-        $model->eol = $request->input('eol');
+        $model->depreciation_id     = $request->input('depreciation_id');
+        $model->eol                 = $request->input('eol');
         $model->name                = $request->input('name');
         $model->model_number        = $request->input('model_number');
         $model->manufacturer_id     = $request->input('manufacturer_id');
         $model->category_id         = $request->input('category_id');
         $model->notes               = $request->input('notes');
-
-        $model->requestable = Input::has('requestable');
+        $model->requestable         = $request->input('requestable', '0');
 
         if ($request->input('custom_fieldset')=='') {
             $model->fieldset_id = null;
@@ -204,20 +206,37 @@ class AssetModelsController extends Controller
             $model->fieldset_id = $request->input('custom_fieldset');
         }
 
-        if (Input::file('image')) {
-            $image = Input::file('image');
-            $file_name = str_random(25).".".$image->getClientOriginalExtension();
-            $path = public_path('uploads/models/'.$file_name);
-            Image::make($image->getRealPath())->resize(300, null, function ($constraint) {
-                $constraint->aspectRatio();
-                $constraint->upsize();
-            })->save($path);
-            $model->image = $file_name;
-        }
+        $old_image = $model->image;
 
-        if ($request->input('image_delete') == 1 && Input::file('image') == "") {
+        // Set the model's image property to null if the image is being deleted
+        if ($request->input('image_delete') == 1) {
             $model->image = null;
         }
+
+        if ($request->file('image')) {
+            $image = $request->file('image');
+            $file_name = $model->id.'-'.str_slug($image->getClientOriginalName()) . "." . $image->getClientOriginalExtension();
+
+            if ($image->getClientOriginalExtension()!='svg') {
+                Image::make($image->getRealPath())->resize(500, null, function ($constraint) {
+                    $constraint->aspectRatio();
+                    $constraint->upsize();
+                })->save(app('models_upload_path').$file_name);
+            } else {
+                $image->move(app('models_upload_path'), $file_name);
+            }
+            $model->image = $file_name;
+
+        }
+
+        if ((($request->file('image')) && (isset($old_image)) && ($old_image!='')) || ($request->input('image_delete') == 1)) {
+            try  {
+                unlink(app('models_upload_path').$old_image);
+            } catch (\Exception $e) {
+                \Log::error($e);
+            }
+        }
+
 
         if ($model->save()) {
             return redirect()->route("models.index")->with('success', trans('admin/models/message.update.success'));
@@ -245,6 +264,15 @@ class AssetModelsController extends Controller
             // Throw an error that this model is associated with assets
             return redirect()->route('models.index')->with('error', trans('admin/models/message.assoc_users'));
         }
+
+        if ($model->image) {
+            try  {
+                unlink(public_path().'/uploads/models/'.$model->image);
+            } catch (\Exception $e) {
+                \Log::error($e);
+            }
+        }
+
         // Delete the model
         $model->delete();
 
@@ -352,49 +380,6 @@ class AssetModelsController extends Controller
 
 
 
-    /**
-     * Get the asset information to present to the model view detail page
-     *
-     * @author [A. Gianotto] [<snipe@snipe.net>]
-     * @since [v2.0]
-     * @param Request $request
-     * @param $modelID
-     * @return String JSON
-     * @internal param int $modelId
-     */
-    public function getDataView(Request $request, $modelID)
-    {
-        $assets = Asset::where('model_id', '=', $modelID)->with('company', 'assetstatus');
-
-        if (Input::has('search')) {
-            $assets = $assets->TextSearch(e($request->input('search')));
-        }
-        $offset = request('offset', 0);
-        $limit = request('limit', 50);
-
-
-        $allowed_columns = ['name', 'serial','asset_tag'];
-        $order = $request->input('order') === 'asc' ? 'asc' : 'desc';
-        $sort = in_array($request->input('sort'), $allowed_columns) ? e($request->input('sort')) : 'created_at';
-
-        $assets = $assets->orderBy($sort, $order);
-
-        $assetsCount = $assets->count();
-        $assets = $assets->skip($offset)->take($limit)->get();
-
-        $rows = array();
-
-        $all_custom_fields = CustomField::all();
-        foreach ($assets as $asset) {
-
-            $rows[] = $asset->present()->forDataTable($all_custom_fields);
-        }
-
-        $data = array('total' => $assetsCount, 'rows' => $rows);
-
-        return $data;
-    }
-
 
     /**
      * Returns a view that allows the user to bulk edit model attrbutes
@@ -405,13 +390,16 @@ class AssetModelsController extends Controller
      */
     public function postBulkEdit(Request $request)
     {
+        
         $models_raw_array = Input::get('ids');
-        $models = AssetModel::whereIn('id', $models_raw_array)->get();
-        $nochange = ['NC' => 'No Change'];
-        $fieldset_list = $nochange + Helper::customFieldsetList();
-        $depreciation_list = $nochange + Helper::depreciationList();
-        $category_list = $nochange + Helper::categoryList('asset');
-        $manufacturer_list = $nochange + Helper::manufacturerList();
+
+        if (is_array($models_raw_array)) {
+            $models = AssetModel::whereIn('id', $models_raw_array)->get();
+            $nochange = ['NC' => 'No Change'];
+            $fieldset_list = $nochange + Helper::customFieldsetList();
+            $depreciation_list = $nochange + Helper::depreciationList();
+            $category_list = $nochange + Helper::categoryList('asset');
+            $manufacturer_list = $nochange + Helper::manufacturerList();
 
         
              return view('models/bulk-edit', compact('models'))
@@ -419,6 +407,10 @@ class AssetModelsController extends Controller
                 ->with('category_list', $category_list)
                 ->with('fieldset_list', $fieldset_list)
                 ->with('depreciation_list', $depreciation_list);
+        }
+
+        return redirect()->route('models.index')
+            ->with('error', 'You must select at least one model to edit.');
 
     }
 

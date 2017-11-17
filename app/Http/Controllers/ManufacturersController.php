@@ -2,6 +2,7 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\Helper;
+use App\Http\Requests\ImageUploadRequest;
 use App\Models\CustomField;
 use App\Models\Manufacturer;
 use Auth;
@@ -13,6 +14,7 @@ use Redirect;
 use Str;
 use View;
 use Illuminate\Http\Request;
+use Image;
 
 /**
  * This controller handles all actions related to Manufacturers for
@@ -60,7 +62,7 @@ class ManufacturersController extends Controller
      * @param Request $request
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function store(Request $request)
+    public function store(ImageUploadRequest $request)
     {
 
         $manufacturer = new Manufacturer;
@@ -70,6 +72,18 @@ class ManufacturersController extends Controller
         $manufacturer->support_url     = $request->input('support_url');
         $manufacturer->support_phone    = $request->input('support_phone');
         $manufacturer->support_email    = $request->input('support_email');
+
+
+        if ($request->file('image')) {
+            $image = $request->file('image');
+            $file_name = str_slug($image->getClientOriginalName()).".".$image->getClientOriginalExtension();
+            $path = public_path('uploads/manufacturers/'.$file_name);
+            Image::make($image->getRealPath())->resize(200, null, function ($constraint) {
+                $constraint->aspectRatio();
+                $constraint->upsize();
+            })->save($path);
+            $manufacturer->image = $file_name;
+        }
 
 
 
@@ -124,6 +138,38 @@ class ManufacturersController extends Controller
         $manufacturer->support_phone    = $request->input('support_phone');
         $manufacturer->support_email    = $request->input('support_email');
 
+        $old_image = $manufacturer->image;
+
+        // Set the model's image property to null if the image is being deleted
+        if ($request->input('image_delete') == 1) {
+            $manufacturer->image = null;
+        }
+
+        if ($request->file('image')) {
+            $image = $request->file('image');
+            $file_name = $manufacturer->id.'-'.str_slug($image->getClientOriginalName()) . "." . $image->getClientOriginalExtension();
+
+            if ($image->getClientOriginalExtension()!='svg') {
+                Image::make($image->getRealPath())->resize(500, null, function ($constraint) {
+                    $constraint->aspectRatio();
+                    $constraint->upsize();
+                })->save(app('manufacturers_upload_path').$file_name);
+            } else {
+                $image->move(app('manufacturers_upload_path'), $file_name);
+            }
+            $manufacturer->image = $file_name;
+
+        }
+
+        if ((($request->file('image')) && (isset($old_image)) && ($old_image!='')) || ($request->input('image_delete') == 1)) {
+            try  {
+                unlink(app('manufacturers_upload_path').$old_image);
+            } catch (\Exception $e) {
+                \Log::error($e);
+            }
+        }
+
+
         if ($manufacturer->save()) {
             return redirect()->route('manufacturers.index')->with('success', trans('admin/manufacturers/message.update.success'));
         }
@@ -150,6 +196,16 @@ class ManufacturersController extends Controller
             // Redirect to the asset management page
             return redirect()->route('manufacturers.index')->with('error', trans('admin/manufacturers/message.assoc_users'));
         }
+
+        if ($manufacturer->image) {
+            try  {
+                unlink(public_path().'/uploads/manufacturers/'.$manufacturer->image);
+            } catch (\Exception $e) {
+                \Log::error($e);
+            }
+        }
+
+
         // Delete the manufacturer
         $manufacturer->delete();
         // Redirect to the manufacturers management page
@@ -158,11 +214,10 @@ class ManufacturersController extends Controller
 
     /**
     * Returns a view that invokes the ajax tables which actually contains
-    * the content for the manufacturers detail listing, which is generated in getDatatable.
+    * the content for the manufacturers detail listing, which is generated via API.
     * This data contains a listing of all assets that belong to that manufacturer.
     *
     * @author [A. Gianotto] [<snipe@snipe.net>]
-    * @see ManufacturersController::getDataView()
     * @param int $manufacturerId
     * @since [v1.0]
     * @return \Illuminate\Contracts\View\View
@@ -174,154 +229,13 @@ class ManufacturersController extends Controller
         if (isset($manufacturer->id)) {
             return view('manufacturers/view', compact('manufacturer'));
         }
-        // Prepare the error message
-        $error = trans('admin/manufacturers/message.does_not_exist', compact('id'));
+
+        $error = trans('admin/manufacturers/message.does_not_exist');
         // Redirect to the user management page
-        return redirect()->route('manufacturers')->with('error', $error);
+        return redirect()->route('manufacturers.index')->with('error', $error);
     }
 
    
-    /**
-     * Generates the JSON used to display the manufacturer detail.
-     * This JSON returns data on all of the assets with the specified
-     * manufacturer ID number.
-     *
-     * @author [A. Gianotto] [<snipe@snipe.net>]
-     * @see ManufacturersController::getView()
-     * @param int $manufacturerId
-     * @param string $itemType
-     * @param Request $request
-     * @return String JSON* @since [v1.0]
-     */
-    public function getDataView($manufacturerId, $itemType = null, Request $request)
-    {
-        $manufacturer = Manufacturer::find($manufacturerId);
-
-        switch ($itemType) {
-            case "assets":
-                return $this->getDataAssetsView($manufacturer, $request);
-            case "licenses":
-                return $this->getDataLicensesView($manufacturer, $request);
-            case "accessories":
-                return $this->getDataAccessoriesView($manufacturer, $request);
-            case "consumables":
-                return $this->getDataConsumablesView($manufacturer, $request);
-        }
-
-        return "We shouldn't be here";
-
-    }
-
-    protected function getDataAssetsView(Manufacturer $manufacturer, Request $request)
-    {
-        $manufacturer = $manufacturer->load('assets.model', 'assets.assignedTo', 'assets.assetstatus', 'assets.company');
-        $manufacturer_assets = $manufacturer->assets();
-
-        if ($request->has('search')) {
-            $manufacturer_assets = $manufacturer_assets->TextSearch(e($request->input('search')));
-        }
-
-        $offset = request('offset', 0);
-        $limit = request('limit', 50);
-
-        $order = $request->input('order') === 'asc' ? 'asc' : 'desc';
-
-        $allowed_columns = ['id','name','serial','asset_tag'];
-        $sort = in_array($request->input('sort'), $allowed_columns) ? $request->input('sort') : 'created_at';
-        $count = $manufacturer_assets->count();
-        $manufacturer_assets = $manufacturer_assets->skip($offset)->take($limit)->get();
-        $rows = array();
-        $all_custom_fields = CustomField::all(); // cached;
-        foreach ($manufacturer_assets as $asset) {
-            $rows[] = $asset->present()->forDataTable($all_custom_fields);
-        }
-
-        $data = array('total' => $count, 'rows' => $rows);
-        return $data;
-    }
-
-    protected function getDataLicensesView(Manufacturer $manufacturer, Request $request)
-    {
-        $manufacturer = $manufacturer->load('licenses.company', 'licenses.manufacturer', 'licenses.licenseSeatsRelation');
-        $licenses = $manufacturer->licenses;
-
-        if ($request->has('search')) {
-            $licenses = $licenses->TextSearch($request->input('search'));
-        }
-
-        $licenseCount = $licenses->count();
-
-        $rows = array();
-
-        foreach ($licenses as $license) {
-            $rows[] = $license->present()->forDataTable();
-        }
-
-        $data = array('total' => $licenseCount, 'rows' => $rows);
-
-        return $data;
-    }
-
-    public function getDataAccessoriesView(Manufacturer $manufacturer, Request $request)
-    {
-        $manufacturer = $manufacturer->load(
-            'accessories.location',
-            'accessories.company',
-            'accessories.category',
-            'accessories.manufacturer',
-            'accessories.users'
-        );
-        $accessories = $manufacturer->accessories();
-
-        if ($request->has('search')) {
-            $accessories = $accessories->TextSearch(e($request->input('search')));
-        }
-
-        $offset = request('offset', 0);
-        $limit = request('limit', 50);
-
-        $accessCount = $accessories->count();
-        $accessories = $accessories->skip($offset)->take($limit)->get();
-        $rows = array();
-
-        foreach ($accessories as $accessory) {
-            $rows[] = $accessory->present()->forDataTable();
-        }
-
-        $data = array('total'=>$accessCount, 'rows'=>$rows);
-
-        return $data;
-    }
-
-    public function getDataConsumablesView($manufacturer, Request $request)
-    {
-        $manufacturer = $manufacturer->load(
-            'consumables.location',
-            'consumables.company',
-            'consumables.category',
-            'consumables.manufacturer',
-            'consumables.users'
-        );
-        $consumables = $manufacturer->consumables();
-
-        if ($request->has('search')) {
-            $consumables = $consumables->TextSearch(e($request->input('search')));
-        }
-
-        $offset = request('offset', 0);
-        $limit = request('limit', 50);
 
 
-        $consumCount = $consumables->count();
-        $consumables = $consumables->skip($offset)->take($limit)->get();
-        $rows = array();
-
-        foreach ($consumables as $consumable) {
-            $rows[] = $consumable->present()->forDataTable();
-        }
-
-        $data = array('total' => $consumCount, 'rows' => $rows);
-
-        return $data;
-    }
 }

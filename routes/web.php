@@ -187,10 +187,11 @@ Route::group([ 'prefix' => 'admin','middleware' => ['authorize:superuser']], fun
     });
 
 
-    Route::get('requests', [ 'as' => 'requests', 'middleware' => 'authorize:admin', 'uses' => 'ViewAssetsController@getRequestedIndex']);
 
-
-
+    Route::resource('groups', 'GroupsController', [
+        'middleware' => ['auth'],
+        'parameters' => ['group' => 'group_id']
+    ]);
 
     Route::get('/', ['as' => 'settings.index', 'uses' => 'SettingsController@index' ]);
 
@@ -198,10 +199,7 @@ Route::group([ 'prefix' => 'admin','middleware' => ['authorize:superuser']], fun
 });
 
 
-Route::resource('groups', 'GroupsController', [
-    'middleware' => ['auth'],
-    'parameters' => ['group' => 'group_id']
-]);
+
 
 /*
 |--------------------------------------------------------------------------
@@ -232,6 +230,8 @@ Route::group([ 'prefix' => 'account', 'middleware' => ['auth']], function () {
     # Profile
     Route::get('profile', [ 'as' => 'profile', 'uses' => 'ProfileController@getIndex' ]);
     Route::post('profile', 'ProfileController@postIndex');
+
+    Route::get('menu', [ 'as' => 'account.menuprefs', 'uses' => 'ProfileController@getMenuState' ]);
 
     Route::get('password', [ 'as' => 'account.password.index', 'uses' => 'ProfileController@password' ]);
     Route::post('password', [ 'uses' => 'ProfileController@passwordSave' ]);
@@ -306,10 +306,10 @@ Route::group(['middleware' => ['auth']], function () {
         'reports/export/licenses',
         [ 'as' => 'reports/export/licenses', 'uses' => 'ReportsController@exportLicenseReport' ]
     );
-    Route::get('reports/assets', [ 'as' => 'reports/assets', 'uses' => 'ReportsController@getAssetsReport' ]);
+    Route::get('reports/assets', [ 'as' => 'reports/assets', 'uses' => 'ReportsController@getAssetsReport'    ]);
     Route::get(
         'reports/export/assets',
-        [ 'as' => 'reports/export/assets', 'uses' => 'ReportsController@exportAssetReport' ]
+        [ 'as' => 'reports.export.assets', 'uses' => 'ReportsController@exportAssetReport' ]
     );
     Route::get('reports/accessories', [ 'as' => 'reports/accessories', 'uses' => 'ReportsController@getAccessoryReport' ]);
     Route::get(
@@ -459,6 +459,7 @@ Route::group(['middleware' => 'web'], function () {
 
 });
 
+Auth::routes();
 
 
 

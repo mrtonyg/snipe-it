@@ -24,8 +24,8 @@ return array(
     ),
 
     'audit' => array(
-        'error'   		=> 'Asset audit was unsuccessful. Please try again.',
-        'success' 		=> 'Asset audit successfully logged.'
+        'error'   		=> 'Одитът на активи бе неуспешен. Моля, опитайте отново.',
+        'success' 		=> 'Активният одит бе успешно регистриран.'
     ),
 
 
@@ -53,7 +53,7 @@ return array(
     'delete' => array(
         'confirm'   	=> 'Сигурни ли сте, че желаете изтриване на актива?',
         'error'   		=> 'Проблем при изтриване на актива. Моля опитайте отново.',
-        'nothing_updated'   => 'No assets were selected, so nothing was deleted.',
+        'nothing_updated'   => 'Няма избрани активи, така че нищо не бе изтрито.',
         'success' 		=> 'Активът е изтрит успешно.'
     ),
 
@@ -61,7 +61,8 @@ return array(
         'error'   		=> 'Активът не беше изписан. Моля опитайте отново.',
         'success' 		=> 'Активът изписан успешно.',
         'user_does_not_exist' => 'Невалиден потребител. Моля опитайте отново.',
-        'not_available' => 'Този актив не е наличен за отписване!'
+        'not_available' => 'Този актив не е наличен за отписване!',
+        'no_assets_selected' => 'You must select at least one asset from the list'
     ),
 
     'checkin' => array(

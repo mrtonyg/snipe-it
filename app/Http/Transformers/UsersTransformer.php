@@ -23,6 +23,7 @@ class UsersTransformer
     {
         $array = [
                 'id' => (int) $user->id,
+                'avatar' => e($user->present()->gravatar),
                 'name' => e($user->first_name).' '.($user->last_name),
                 'firstname' => e($user->first_name),
                 'lastname' => e($user->last_name),
@@ -33,6 +34,12 @@ class UsersTransformer
                     'name'=> e($user->manager->username)
                 ]  : null,
                 'jobtitle' => ($user->jobtitle) ? e($user->jobtitle) : null,
+                'phone' => ($user->phone) ? e($user->phone) : null,
+                'address' => ($user->address) ? e($user->address) : null,
+                'city' => ($user->city) ? e($user->city) : null,
+                'state' => ($user->state) ? e($user->state) : null,
+                'country' => ($user->country) ? e($user->country) : null,
+                'zip' => ($user->zip) ? e($user->zip) : null,
                 'email' => e($user->email),
                 'department' => ($user->department) ? [
                     'id' => (int) $user->department->id,
@@ -42,6 +49,7 @@ class UsersTransformer
                     'id' => (int) $user->userloc->id,
                     'name'=> e($user->userloc->name)
                 ]  : null,
+                'notes'=> e($user->notes),
                 'permissions' => $user->decodePermissions(),
                 'activated' => ($user->activated =='1') ? true : false,
                 'two_factor_activated' => ($user->two_factor_active()) ? true : false,
@@ -57,7 +65,7 @@ class UsersTransformer
 
         $permissions_array['available_actions'] = [
             'update' => (Gate::allows('update', User::class) && ($user->deleted_at==''))  ? true : false,
-            'delete' => (Gate::allows('delete', User::class) && ($user->deleted_at=='')) ? true : false,
+            'delete' => (Gate::allows('delete', User::class) && ($user->deleted_at=='') && ($user->assets_count == 0) && ($user->licenses_count == 0)  && ($user->accessories_count == 0)  && ($user->consumables_count == 0)) ? true : false,
             'clone' => (Gate::allows('create', User::class) && ($user->deleted_at=='')) ,
             'restore' => (Gate::allows('create', User::class) && ($user->deleted_at!='')) ? true : false,
         ];

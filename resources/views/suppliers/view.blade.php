@@ -137,6 +137,40 @@
 
 <div class="row">
   <div class="col-md-9">
+
+    <div class="box box-default">
+      <div class="box-header with-border">
+        <div class="box-heading">
+          <h3 class="box-title">Accessories</h3>
+        </div>
+      </div><!-- /.box-header -->
+      <div class="box-body">
+        <div class="table-responsive">
+
+          <table
+                  name="suppliersAccessories"
+                  id="table"
+                  class="snipe-table"
+                  data-url="{{ route('api.accessories.index', ['supplier_id' => $supplier->id]) }}"
+                  data-cookie="true"
+                  data-export-options='{"fileName": "testo"}'
+                  data-click-to-select="true"
+                  data-cookie-id-table="suppliersAccessories-{{ config('version.hash_version') }}">
+            <thead>
+            <tr>
+              <th class="col-md-4" data-field="name" data-formatter="accessoriesLinkFormatter">Name</th>
+              <th class="col-md-4" data-field="model_number">Model Number</th>
+              <th class="col-md-4" data-field="purchase_cost" data-footer-formatter="sumFormatter">Purchase_cost</th>
+
+              <th class="col-md-4" data-field="actions" data-formatter="accessoriesActionsFormatter">Actions</th>
+            </tr>
+            </thead>
+          </table>
+        </div>
+      </div>
+    </div>
+
+
     <div class="box box-default">
 
       @if ($supplier->id)
@@ -200,12 +234,18 @@
               @foreach ($supplier->asset_maintenances as $improvement)
                 @if (is_null($improvement->deleted_at))
                 <tr>
-                  <td><a href="{{ route('hardware.show', $improvement->asset_id) }}">{{ $improvement->asset->name }}</a></td>
-                  <td>{{ $improvement->improvement_type }}</td>
+                  <td>
+                    @if ($improvement->asset)
+                      <a href="{{ route('hardware.show', $improvement->asset_id) }}">{{ $improvement->asset->name }}</a>
+                    @else
+                        (deleted asset)
+                    @endif
+                  </td>
+                  <td>{{ $improvement->asset_maintenance_type }}</td>
                   <td>{{ $improvement->start_date }}</td>
                   <td>{{ $improvement->completion_date }}</td>
                   <td>{{ $improvement->is_warranty ? trans('admin/asset_maintenances/message.warranty') : trans('admin/asset_maintenances/message.not_warranty') }}</td>
-                  <td>{{ sprintf( trans( 'general.currency' ) . '%01.2f', $improvement->cost) }}</td>
+                  <td>{{ sprintf( $snipeSettings->default_currency. '%01.2f', $improvement->cost) }}</td>
                     <?php $totalCost += $improvement->cost; ?>
                   <td><a href="{{ route('maintenances.edit', $improvement->id) }}" class="btn btn-warning"><i class="fa fa-pencil icon-white"></i></a>
                   </td>
@@ -222,7 +262,7 @@
               <td></td>
               <td></td>
               <td></td>
-              <td>{{sprintf(trans( 'general.currency' ) . '%01.2f', $totalCost)}}</td>
+              <td>{{sprintf($snipeSettings->default_currency . '%01.2f', $totalCost)}}</td>
             </tr>
           </tfoot>
         </table>
@@ -232,4 +272,9 @@
   </div>
 </div> <!-- /.row-->
 
+@stop
+@section('moar_scripts')
+  @include ('partials.bootstrap-table', [
+      'showFooter' => true,
+      ])
 @stop

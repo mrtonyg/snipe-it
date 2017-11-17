@@ -22,7 +22,8 @@ class ComponentsTransformer
         $array = [
             'id' => (int) $component->id,
             'name' => e($component->name),
-            'serial_number' => e($component->serial),
+            'image' =>   ($component->image) ? e(url('/').'/uploads/components/'.e($component->image)) : null,
+            'serial_number' => ($component->serial) ? e($component->serial) : null,
             'location' => ($component->location) ? [
                 'id' => (int) $component->location->id,
                 'name' => e($component->location->name)
@@ -58,12 +59,22 @@ class ComponentsTransformer
     }
 
 
-    public function transformCheckedoutComponents(Collection $components_users, $total)
+    public function transformCheckedoutComponents(Collection $components_assets, $total)
     {
         $array = array();
-        foreach ($components_users as $user) {
-            $array[] = (new UsersTransformer)->transformUser($user);
+        foreach ($components_assets as $asset) {
+            $array[] = [
+                'assigned_pivot_id' => $asset->pivot->id,
+                'id' => (int) $asset->id,
+                'name' =>  e($asset->model->present()->name) .' '.e($asset->present()->name),
+                'qty' => $asset->pivot->assigned_qty,
+                'type' => 'asset',
+                'created_at' => Helper::getFormattedDateObject($asset->pivot->created_at, 'datetime'),
+                'available_actions' => ['checkin' => true]
+            ];
+
         }
+
         return (new DatatablesTransformer)->transformDatatables($array, $total);
     }
 }

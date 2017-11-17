@@ -15,12 +15,12 @@ Form::macro('locales', function ($name = "locale", $selected = null, $class = nu
       ''=> " ",
       'en'=> "English, US",
       'en-GB'=> "English, UK",
-      //'af'=> "Afrikaans",
+      'af'=> "Afrikaans",
       'ar'=> "Arabic",
       'bg'=> "Bulgarian",
       'zh-CN'=> "Chinese Simplified",
       'zh-TW'=> "Chinese Traditional",
-     // 'hr'=> "Croatian",
+      'hr'=> "Croatian",
       'cs'=> "Czech",
       'da'=> "Danish",
       'nl'=> "Dutch",
@@ -33,12 +33,14 @@ Form::macro('locales', function ($name = "locale", $selected = null, $class = nu
       'he'=> "Hebrew",
       'hu'=> "Hungarian",
       'id'=> "Indonesian",
+      'ga-IE'=> "Irish",
       'it'=> "Italian",
       'ja'=> "Japanese",
       'ko'=> "Korean",
-     // 'lv'=>'Latvian',
+      'lv'=>'Latvian',
       'lt'=> "Lithuanian",
       'ms'=> "Malay",
+      'mi'=> "Maori",
       'mn'=> "Mongolian",
       'no'=> "Norwegian",
       'fa'=> "Persian",
@@ -50,10 +52,11 @@ Form::macro('locales', function ($name = "locale", $selected = null, $class = nu
       'es-ES'=> "Spanish",
       'es-CO'=> "Spanish, Colombia",
       'sv-SE'=> "Swedish",
-      //'ta'=> "Tamil",
+      'ta'=> "Tamil",
       'th'=> "Thai",
       'tr'=> "Turkish",
       'vi'=> "Vietnamese",
+      'zu'=> "Zulu",
     );
 
     $idclause='';
@@ -359,6 +362,7 @@ Form::macro('date_display_format', function ($name = "date_display_format", $sel
         'm/d/Y',
         'n/d/y',
         'm/j/Y',
+        'd.m.Y',
     ];
 
     foreach ($formats as $format) {
@@ -398,31 +402,8 @@ Form::macro('time_display_format', function ($name = "time_display_format", $sel
 
 /**
 * Barcode macro
-* Generates the dropdown menu of available barcodes
+* Generates the dropdown menu of available 1D barcodes
 */
-Form::macro('barcode_types', function ($name = "barcode_type", $selected = null, $class = null) {
-
-    $barcode_types = array(
-    'QRCODE'=>"QR Code",
-    'PDF417'=>'PDF417',
-    'DATAMATRIX'=>'DATAMATRIX',
-    'C128'=>'Code 128'
-    );
-
-    $select = '<select name="'.$name.'" class="'.$class.'">';
-
-    foreach ($barcode_types as $code => $codename) {
-        $select .= '<option value="'.$code.'"'.($selected == $code ? ' selected="selected"' : '').'>'.$codename.'</option> ';
-    }
-
-    $select .= '</select>';
-
-    return $select;
-
-});
-
-
-
 Form::macro('alt_barcode_types', function ($name = "alt_barcode", $selected = null, $class = null) {
 
     $barcode_types = array(
@@ -445,6 +426,10 @@ Form::macro('alt_barcode_types', function ($name = "alt_barcode", $selected = nu
 });
 
 
+/**
+* Barcode macro
+* Generates the dropdown menu of available 2D barcodes
+*/
 Form::macro('barcode_types', function ($name = "barcode_type", $selected = null, $class = null) {
 
     $barcode_types = array(
@@ -493,7 +478,7 @@ Form::macro('two_factor_options', function ($name = "two_factor_enabled", $selec
 
     );
 
-    $select = '<select name="'.$name.'" class="'.$class.'" style="width: 500px">';
+    $select = '<select name="'.$name.'" class="'.$class.'">';
     foreach ($formats as $format => $label) {
         $select .= '<option value="'.$format.'"'.($selected == $format ? ' selected="selected"' : '').'>'.$label.'</option> '."\n";
     }

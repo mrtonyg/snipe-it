@@ -7,6 +7,7 @@ use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use App\Helpers\Helper;
 use Illuminate\Validation\ValidationException;
+use Log;
 
 class Handler extends ExceptionHandler
 {
@@ -34,7 +35,10 @@ class Handler extends ExceptionHandler
      */
     public function report(Exception $exception)
     {
-        parent::report($exception);
+        if ($this->shouldReport($exception)) {
+            Log::error($exception);
+            return parent::report($exception);
+        }
     }
 
     /**
@@ -63,7 +67,7 @@ class Handler extends ExceptionHandler
             }
 
             if ($e instanceof \Illuminate\Validation\ValidationException) {
-                return response()->json(Helper::formatStandardApiResponse('error', $e->response['messages'], $e->getMessage(), 400));
+                return response()->json(Helper::formatStandardApiResponse('error', null, $e->response['messages'], 400));
             }
 
             if ($this->isHttpException($e)) {

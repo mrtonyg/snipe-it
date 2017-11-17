@@ -25,8 +25,8 @@ return array(
     ),
 
     'audit' => array(
-        'error'   		=> 'Asset audit was unsuccessful. Please try again.',
-        'success' 		=> 'Asset audit successfully logged.'
+        'error'   		=> '자산 감사가 실패했습니다. 다시 시도해 주세요.',
+        'success' 		=> '자산 감사가 성공적으로 기록되었습니다.'
     ),
 
 
@@ -62,7 +62,8 @@ return array(
         'error'   		=> '자산이 반출되지 않았습니다. 다시 시도해 주세요.',
         'success' 		=> '자산이 반출되었습니다.',
         'user_does_not_exist' => '잘못된 사용자 입니다. 다시 시도해 주세요.',
-        'not_available' => '그 자산은 반출 할 수 없습니다!'
+        'not_available' => '그 자산은 반출 할 수 없습니다!',
+        'no_assets_selected' => 'You must select at least one asset from the list'
     ),
 
     'checkin' => array(

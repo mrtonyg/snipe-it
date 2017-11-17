@@ -25,8 +25,8 @@ return array(
     ),
 
     'audit' => array(
-        'error'   		=> 'Asset audit was unsuccessful. Please try again.',
-        'success' 		=> 'Asset audit successfully logged.'
+        'error'   		=> 'Varlık denetimi başarısız oldu. Lütfen tekrar deneyin.',
+        'success' 		=> 'Varlık denetimi başarıyla günlüğe kaydedildi.'
     ),
 
 
@@ -62,7 +62,8 @@ return array(
         'error'   		=> 'Demirbaş çıkışı yapılamadı. Lütfen tekrar deneyin',
         'success' 		=> 'Demirbaş çıkışı yapıldı.',
         'user_does_not_exist' => 'Bu kullanıcı geçersiz. Lütfen tekrar deneyin.',
-        'not_available' => 'Bu varlık için atama yapılamaz!'
+        'not_available' => 'Bu varlık için atama yapılamaz!',
+        'no_assets_selected' => 'You must select at least one asset from the list'
     ),
 
     'checkin' => array(

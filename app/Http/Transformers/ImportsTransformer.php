@@ -29,7 +29,6 @@ class ImportsTransformer
             'header_row' => $import->header_row,
             'first_row'  => $import->first_row,
             'field_map'  => $import->field_map,
-
         ];
 
         return $array;

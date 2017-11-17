@@ -76,14 +76,14 @@ class LicensePresenter extends Presenter
                 "title" => trans('general.manufacturer'),
                 "formatter" => "manufacturersLinkObjFormatter",
             ], [
-                "field" => "total_seats",
+                "field" => "seats",
                 "searchable" => false,
-                "sortable" => false,
+                "sortable" => true,
                 "title" => trans('admin/accessories/general.total'),
             ], [
-                "field" => "remaining_qty",
+                "field" => "free_seats_count",
                 "searchable" => false,
-                "sortable" => false,
+                "sortable" => true,
                 "title" => trans('admin/accessories/general.remaining'),
             ], [
                 "field" => "purchase_date",
@@ -98,6 +98,7 @@ class LicensePresenter extends Presenter
                 "sortable" => true,
                 "visible" => false,
                 "title" => trans('general.purchase_cost'),
+                "footerFormatter" => 'sumFormatter',
             ], [
                 "field" => "purchase_order",
                 "searchable" => true,
@@ -110,6 +111,12 @@ class LicensePresenter extends Presenter
                 "sortable" => true,
                 "visible" => false,
                 "title" => trans('general.order_number'),
+            ], [
+                "field" => "notes",
+                "searchable" => true,
+                "sortable" => true,
+                "visible" => false,
+                "title" => trans('general.notes'),
             ]
         ];
 
@@ -152,7 +159,7 @@ class LicensePresenter extends Presenter
      */
     public function fullName()
     {
-        return 'poop';
+        return $this->name;
     }
 
 

@@ -2,14 +2,26 @@
 
 {{-- Page title --}}
 @section('title')
-{{ trans('admin/models/table.title') }}
+
+  @if (Input::get('status')=='deleted')
+    {{ trans('admin/models/general.view_deleted') }}
+    {{ trans('admin/models/table.title') }}
+    @else
+    {{ trans('admin/models/general.view_models') }}
+  @endif
 @parent
 @stop
 
 {{-- Page title --}}
 @section('header_right')
   <a href="{{ route('models.create') }}" class="btn btn-primary pull-right"></i> {{ trans('general.create') }}</a>
-  <a href="{{ url('hardware/models?status=Deleted') }}" class="btn btn-default pull-right" style="margin-right:5px;"><i class="fa fa-trash"></i>  {{ trans('admin/models/general.view_deleted') }}</a>
+
+  @if (Input::get('status')=='deleted')
+    <a class="btn btn-default pull-right" href="{{ route('models.index') }}" style="margin-right: 5px;">{{ trans('admin/models/general.view_models') }}</a>
+  @else
+    <a class="btn btn-default pull-right" href="{{ route('models.index', ['status' => 'deleted']) }}" style="margin-right: 5px;">{{ trans('admin/models/general.view_deleted') }}</a>
+  @endif
+
 @stop
 
 
@@ -28,12 +40,15 @@
            'id' => 'bulkForm']) }}
         <div class="row">
           <div class="col-md-12">
+
+            @if (Input::get('status')!='deleted')
               <div id="toolbar">
                 <select name="bulk_actions" class="form-control select2" style="width: 300px;">
                   <option value="edit">Bulk Edit</option>
                 </select>
                 <button class="btn btn-primary" id="bulkEdit" disabled>Go</button>
               </div>
+            @endif
 
 
 
@@ -41,7 +56,7 @@
         name="models"
         class="table table-striped snipe-table"
         id="table"
-        data-url="{{ route('api.models.index') }}"
+        data-url="{{ route('api.models.index', ['status'=> e(Input::get('status'))]) }}"
         data-cookie="true"
         data-click-to-select="true"
         data-cookie-id-table="modelsTable-{{ config('version.hash_version') }}">

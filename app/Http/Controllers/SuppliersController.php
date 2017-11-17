@@ -13,6 +13,7 @@ use Str;
 use View;
 use Auth;
 use Illuminate\Http\Request;
+use App\Http\Requests\ImageUploadRequest;
 
 use Symfony\Component\HttpFoundation\JsonResponse;
 
@@ -56,7 +57,7 @@ class SuppliersController extends Controller
      * @param Request $request
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function store(Request $request)
+    public function store(ImageUploadRequest $request)
     {
         // Create a new supplier
         $supplier = new Supplier;
@@ -76,20 +77,18 @@ class SuppliersController extends Controller
         $supplier->url                  = $supplier->addhttp(request('url'));
         $supplier->user_id              = Auth::id();
 
-        if (Input::file('image')) {
+        if ($request->file('image')) {
             $image = $request->file('image');
             $file_name = str_random(25).".".$image->getClientOriginalExtension();
             $path = public_path('uploads/suppliers/'.$file_name);
-            Image::make($image->getRealPath())->resize(300, null, function ($constraint) {
+            Image::make($image->getRealPath())->resize(200, null, function ($constraint) {
                 $constraint->aspectRatio();
                 $constraint->upsize();
             })->save($path);
-                $supplier->image = $file_name;
+            $supplier->image = $file_name;
         }
 
-            // Was it created?
         if ($supplier->save()) {
-          // Redirect to the new supplier  page
             return redirect()->route('suppliers.index')->with('success', trans('admin/suppliers/message.create.success'));
         }
         return redirect()->back()->withInput()->withErrors($supplier->getErrors());
@@ -136,7 +135,7 @@ class SuppliersController extends Controller
      * @param  int  $supplierId
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function update($supplierId = null, Request $request)
+    public function update($supplierId = null, ImageUploadRequest $request)
     {
         // Check if the supplier exists
         if (is_null($supplier = Supplier::find($supplierId))) {
@@ -159,20 +158,38 @@ class SuppliersController extends Controller
         $supplier->url                  = $supplier->addhttp(request('url'));
         $supplier->notes                = request('notes');
 
-        if (Input::file('image')) {
-            $image = $request->file('image');
-            $file_name = str_random(25).".".$image->getClientOriginalExtension();
-            $path = public_path('uploads/suppliers/'.$file_name);
-            Image::make($image->getRealPath())->resize(300, null, function ($constraint) {
-                $constraint->aspectRatio();
-                $constraint->upsize();
-            })->save($path);
-            $supplier->image = $file_name;
-        }
 
-        if (request('image_delete') == 1 && $request->file('image') == "") {
+        $old_image = $supplier->image;
+
+        // Set the model's image property to null if the image is being deleted
+        if ($request->input('image_delete') == 1) {
             $supplier->image = null;
         }
+
+        if ($request->file('image')) {
+            $image = $request->file('image');
+            $file_name = $supplier->id.'-'.str_slug($image->getClientOriginalName()) . "." . $image->getClientOriginalExtension();
+
+            if ($image->getClientOriginalExtension()!='svg') {
+                Image::make($image->getRealPath())->resize(500, null, function ($constraint) {
+                    $constraint->aspectRatio();
+                    $constraint->upsize();
+                })->save(app('suppliers_upload_path').$file_name);
+            } else {
+                $image->move(app('suppliers_upload_path'), $file_name);
+            }
+            $supplier->image = $file_name;
+
+        }
+
+        if ((($request->file('image')) && (isset($old_image)) && ($old_image!='')) || ($request->input('image_delete') == 1)) {
+            try  {
+                unlink(app('suppliers_upload_path').$old_image);
+            } catch (\Exception $e) {
+                \Log::error($e);
+            }
+        }
+
 
         if ($supplier->save()) {
             return redirect()->route('suppliers.index')->with('success', trans('admin/suppliers/message.update.success'));
@@ -190,23 +207,29 @@ class SuppliersController extends Controller
      */
     public function destroy($supplierId)
     {
-        // Check if the supplier exists
-        if (is_null($supplier = Supplier::find($supplierId))) {
-            // Redirect to the suppliers page
+        if (is_null($supplier = Supplier::with('asset_maintenances', 'assets', 'licenses')->withCount('asset_maintenances','assets','licenses')->find($supplierId))) {
             return redirect()->route('suppliers.index')->with('error', trans('admin/suppliers/message.not_found'));
         }
 
-        if ($supplier->num_assets() == 0) {
-            // Delete the supplier
-            $supplier->delete();
-            // Redirect to the suppliers management page
-            return redirect()->route('suppliers.index')->with(
-                'success',
-                trans('admin/suppliers/message.delete.success')
-            );
+
+        if ($supplier->assets_count > 0) {
+            return redirect()->route('suppliers.index')->with('error', trans('admin/suppliers/message.delete.assoc_assets', ['asset_count' => (int) $supplier->assets_count]));
         }
-        // Redirect to the asset management page
-        return redirect()->route('suppliers.index')->with('error', trans('admin/suppliers/message.assoc_users'));
+
+        if ($supplier->asset_maintenances_count > 0) {
+            return redirect()->route('suppliers.index')->with('error', trans('admin/suppliers/message.delete.assoc_maintenances', ['asset_maintenances_count' => $supplier->asset_maintenances_count]));
+        }
+
+        if ($supplier->licenses_count > 0) {
+            return redirect()->route('suppliers.index')->with('error', trans('admin/suppliers/message.delete.assoc_licenses', ['licenses_count' => (int) $supplier->licenses_count]));
+        }
+
+        $supplier->delete();
+        return redirect()->route('suppliers.index')->with('success',
+            trans('admin/suppliers/message.delete.success')
+        );
+
+
     }
 
 

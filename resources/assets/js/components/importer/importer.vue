@@ -1,12 +1,4 @@
-<style scoped>
-td {
-    font-size: 13px;
-}
 
-th {
-    font-size: 13px;
-}
-</style>
 
 <script>
     require('blueimp-file-upload');
@@ -30,16 +22,15 @@ th {
                     currentPercent: "0",
                     statusText: '',
                     visible: false
-                }
+                },
+                customFields: [],
             };
         },
 
-        /**
-         * Prepare the component (Vue 2.x).
-         */
         mounted() {
             window.eventHub.$on('importErrors', this.updateImportErrors);
             this.fetchFiles();
+            this.fetchCustomFields();
             let vm = this;
             $('#fileupload').fileupload({
                 dataType: 'json',
@@ -72,7 +63,7 @@ th {
 
         methods: {
             fetchFiles() {
-                this.$http.get('/api/v1/imports')
+                this.$http.get(route('api.imports.index'))
                 .then( ({data}) => this.files = data, // Success
                     //Fail
                 (response) => {
@@ -81,8 +72,20 @@ th {
                     this.alert.message="Something went wrong fetching files...";
                 });
             },
+            fetchCustomFields() {
+                this.$http.get(route('api.customfields.index'))
+                .then( ({data}) => {
+                    data = data.rows;
+                    data.forEach((item) => {
+                        this.customFields.push({
+                            'id': item.db_column_name,
+                            'text': item.name,
+                        })
+                    })
+                });
+            },
             deleteFile(file, key) {
-                this.$http.delete("/api/v1/imports/"+file.id)
+                this.$http.delete(route('api.imports.destroy', file.id))
                 .then((response) => this.files.splice(key, 1), // Success, remove file from array.
                     (response) => {// Fail
                         this.alert.type="danger";
@@ -99,7 +102,7 @@ th {
             },
             updateImportErrors(errors) {
                 this.importErrors = errors;
-            }
+            },
         },
 
         computed: {

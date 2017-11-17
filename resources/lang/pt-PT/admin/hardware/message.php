@@ -25,8 +25,8 @@ return array(
     ),
 
     'audit' => array(
-        'error'   		=> 'Asset audit was unsuccessful. Please try again.',
-        'success' 		=> 'Asset audit successfully logged.'
+        'error'   		=> 'A auditoria de ativos não teve êxito. Por favor, tente novamente.',
+        'success' 		=> 'Auditoria de ativos logada com sucesso.'
     ),
 
 
@@ -54,7 +54,7 @@ return array(
     'delete' => array(
         'confirm'   	=> 'Tem a certeza de que pretende eliminar este artigo?',
         'error'   		=> 'Ocorreu um problema ao remover o artigo. Por favor, tente novamente.',
-        'nothing_updated'   => 'No assets were selected, so nothing was deleted.',
+        'nothing_updated'   => 'Nenhum recurso foi selecionado, então nada foi excluído.',
         'success' 		=> 'O artigo foi removido com sucesso.'
     ),
 
@@ -62,7 +62,8 @@ return array(
         'error'   		=> 'Não foi possível alocar o artigo, por favor tente novamente',
         'success' 		=> 'Artigo alocado com sucesso.',
         'user_does_not_exist' => 'O utilizador é inválido. Por favor, tente novamente.',
-        'not_available' => 'Esse recurso não está disponível para checkout!'
+        'not_available' => 'Esse recurso não está disponível para checkout!',
+        'no_assets_selected' => 'You must select at least one asset from the list'
     ),
 
     'checkin' => array(

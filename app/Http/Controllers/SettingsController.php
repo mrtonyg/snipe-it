@@ -21,6 +21,7 @@ use App\Models\User;
 use App\Http\Requests\SetupUserRequest;
 use App\Http\Requests\ImageUploadRequest;
 use App\Http\Requests\SettingsLdapRequest;
+use App\Helpers\Helper;
 
 /**
  * This controller handles all actions related to Settings for
@@ -136,28 +137,6 @@ class SettingsController extends Controller
         ->with('section', 'Pre-Flight Check');
     }
 
-    /**
-    * Test the email configuration
-    *
-    * @author [A. Gianotto] [<snipe@snipe.net>]
-    * @since [v3.0]
-    * @return Redirect
-    */
-    public function ajaxTestEmail()
-    {
-
-        try {
-            Mail::send('emails.test', [], function ($m) {
-                $m->to(config('mail.from.address'), config('mail.from.name'));
-                $m->replyTo(config('mail.reply_to.address'), config('mail.reply_to.name'));
-                $m->subject(trans('mail.test_email'));
-            });
-            return 'success';
-        } catch (Exception $e) {
-            return 'error';
-        }
-
-    }
 
     /**
     * Save the first admin user from Setup.
@@ -263,8 +242,8 @@ class SettingsController extends Controller
         $output = Artisan::output();
 
         if ((!file_exists(storage_path().'/oauth-private.key')) || (!file_exists(storage_path().'/oauth-public.key'))) {
-            Artisan::call('passport:install');
             Artisan::call('migrate', ['--force' => true]);
+            Artisan::call('passport:install');
         }
 
 
@@ -338,7 +317,7 @@ class SettingsController extends Controller
         $setting->email_format = $request->input('email_format');
         $setting->username_format = $request->input('username_format');
         $setting->require_accept_signature = $request->input('require_accept_signature');
-        if (config('app.lock_passwords')) {
+        if (!config('app.lock_passwords')) {
             $setting->login_note = $request->input('login_note');
         }
 
@@ -391,6 +370,7 @@ class SettingsController extends Controller
 
         $setting->brand = $request->input('brand', '1');
         $setting->header_color = $request->input('header_color');
+        $setting->show_url_in_emails = $request->input('show_url_in_emails', '0');
 
 
         // Only allow the site name and CSS to be changed if lock_passwords is false
@@ -414,7 +394,7 @@ class SettingsController extends Controller
                 $file_name = "logo.".$image->getClientOriginalExtension();
                 $path = public_path('uploads');
                 if ($image->getClientOriginalExtension()!='svg') {
-                    Image::make($image->getRealPath())->resize(null, 40, function ($constraint) {
+                    Image::make($image->getRealPath())->resize(null, 150, function ($constraint) {
                         $constraint->aspectRatio();
                         $constraint->upsize();
                     })->save($path.'/'.$file_name);
@@ -572,6 +552,7 @@ class SettingsController extends Controller
         $setting->alert_threshold = $request->input('alert_threshold');
         $setting->audit_interval = $request->input('audit_interval');
         $setting->audit_warning_days = $request->input('audit_warning_days');
+        $setting->show_alerts_in_menu = $request->input('show_alerts_in_menu', '0');
 
         if ($setting->save()) {
             return redirect()->route('settings.index')
@@ -767,6 +748,7 @@ class SettingsController extends Controller
         $setting->labels_fontsize = $request->input('labels_fontsize');
         $setting->labels_pagewidth = $request->input('labels_pagewidth');
         $setting->labels_pageheight = $request->input('labels_pageheight');
+        $setting->labels_display_company_name = $request->input('labels_display_company_name', '0');
 
 
 
@@ -846,6 +828,7 @@ class SettingsController extends Controller
         $setting->is_ad = $request->input('is_ad', '0');
         $setting->ldap_tls = $request->input('ldap_tls', '0');
         $setting->ldap_pw_sync = $request->input('ldap_pw_sync', '0');
+        $setting->custom_forgot_pass_url = $request->input('custom_forgot_pass_url');
 
         if ($setting->save()) {
             return redirect()->route('settings.index')
@@ -907,12 +890,30 @@ class SettingsController extends Controller
 
     public function postBackups()
     {
+
         if (!config('app.lock_passwords')) {
             Artisan::call('backup:run');
-            return redirect()->route('settings.backups.index')->with('success', trans('admin/settings/message.backup.generated'));
-        } else {
-            return redirect()->to("settings.backups.index")->with('error', trans('general.feature_disabled'));
-        }
+            $output = Artisan::output();
+
+            // Backup completed
+            if (!preg_match('/failed/', $output)) {
+                return redirect()->route('settings.backups.index')
+                    ->with('success', trans('admin/settings/message.backup.generated'));
+            }
+
+
+            $formatted_output = str_replace('Backup completed!', '', $output);
+            $output_split = explode('...', $formatted_output);
+
+            if (array_key_exists(2, $output_split)) {
+                return redirect()->route("settings.backups.index")->with('error', $output_split[2]);
+            }
+            return redirect()->route("settings.backups.index")->with('error', $formatted_output);
+
+            }
+        return redirect()->route("settings.backups.index")->with('error', trans('general.feature_disabled'));
+
+
 
 
     }
@@ -1022,5 +1023,29 @@ class SettingsController extends Controller
      */
     public function api() {
         return view('settings.api');
+    }
+
+
+
+    /**
+     * Test the email configuration
+     *
+     * @author [A. Gianotto] [<snipe@snipe.net>]
+     * @since [v3.0]
+     * @return Redirect
+     */
+    public function ajaxTestEmail()
+    {
+        try {
+            Mail::send('emails.test', [], function ($m) {
+                $m->to(config('mail.from.address'), config('mail.from.name'));
+                $m->replyTo(config('mail.reply_to.address'), config('mail.reply_to.name'));
+                $m->subject(trans('mail.test_email'));
+            });
+            return response()->json(Helper::formatStandardApiResponse('success', null, 'Maiol sent!'));
+        } catch (Exception $e) {
+            return response()->json(Helper::formatStandardApiResponse('success', null, $e->getMessage()));
+        }
+
     }
 }

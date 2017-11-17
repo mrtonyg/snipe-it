@@ -25,8 +25,8 @@ return array(
     ),
 
     'audit' => array(
-        'error'   		=> 'Asset audit was unsuccessful. Please try again.',
-        'success' 		=> 'Asset audit successfully logged.'
+        'error'   		=> 'L\'audit del patrimonio non è riuscito. Riprova.',
+        'success' 		=> 'L\'audit di risorse si è registrato con successo.'
     ),
 
 
@@ -54,7 +54,7 @@ return array(
     'delete' => array(
         'confirm'   	=> 'Sei sicuro di voler eliminare questo bene?',
         'error'   		=> 'C\'è stato un problema durante la cancellazione del bene. Riprova per favore.',
-        'nothing_updated'   => 'No assets were selected, so nothing was deleted.',
+        'nothing_updated'   => 'Nessun patrimonio è stato selezionato, quindi niente è stato eliminato.',
         'success' 		=> 'Il bene è stato eliminato con successo.'
     ),
 
@@ -62,7 +62,8 @@ return array(
         'error'   		=> 'Il bene non è stato estratto, per favore riprova',
         'success' 		=> 'Il bene è stato estratto con successo.',
         'user_does_not_exist' => 'Questo utente non è valido. Riprova.',
-        'not_available' => 'Questo prodotto non è disponibile per il checkout!'
+        'not_available' => 'Questo prodotto non è disponibile per il checkout!',
+        'no_assets_selected' => 'You must select at least one asset from the list'
     ),
 
     'checkin' => array(

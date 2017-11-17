@@ -22,7 +22,7 @@ class StatuslabelsController extends Controller
     public function index(Request $request)
     {
         $this->authorize('view', Statuslabel::class);
-        $allowed_columns = ['id','name','created_at'];
+        $allowed_columns = ['id','name','created_at', 'assets_count'];
 
         $statuslabels = Statuslabel::withCount('assets');
 
@@ -137,8 +137,14 @@ class StatuslabelsController extends Controller
         $this->authorize('delete', Statuslabel::class);
         $statuslabel = Statuslabel::findOrFail($id);
         $this->authorize('delete', $statuslabel);
-        $statuslabel->delete();
-        return response()->json(Helper::formatStandardApiResponse('success', null,  trans('admin/statuslabels/message.delete.success')));
+
+        // Check that there are no assets associated
+        if ($statuslabel->assets()->count() == 0) {
+            $statuslabel->delete();
+            return response()->json(Helper::formatStandardApiResponse('success', null,  trans('admin/statuslabels/message.delete.success')));
+        }
+
+        return response()->json(Helper::formatStandardApiResponse('error', null, trans('admin/statuslabels/message.assoc_assets')));
 
     }
 
@@ -155,22 +161,23 @@ class StatuslabelsController extends Controller
     public function getAssetCountByStatuslabel()
     {
 
-        $statusLabels = Statuslabel::with('assets')->get();
+        $statuslabels = Statuslabel::with('assets')->groupBy('id')->withCount('assets')->get();
+
         $labels=[];
         $points=[];
         $colors=[];
-        foreach ($statusLabels as $statusLabel) {
-            if ($statusLabel->assets()->count() > 0) {
-                $labels[]=$statusLabel->name;
-                $points[]=$statusLabel->assets()->whereNull('assigned_to')->count();
-                if ($statusLabel->color!='') {
-                    $colors[]=$statusLabel->color;
+        foreach ($statuslabels as $statuslabel) {
+            if ($statuslabel->assets_count > 0) {
+
+                $labels[]=$statuslabel->name. ' ('.number_format($statuslabel->assets_count).')';
+                $points[]=$statuslabel->assets_count;
+                if ($statuslabel->color!='') {
+                    $colors[]=$statuslabel->color;
                 }
             }
         }
-        $labels[]='Deployed';
-        $points[]=Asset::whereNotNull('assigned_to')->count();
 
+        
         $colors_array = array_merge($colors, Helper::chartColors());
 
         $result= [

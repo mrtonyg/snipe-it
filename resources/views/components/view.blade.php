@@ -57,7 +57,8 @@
                   <tr>
                     <th data-switchable="false" data-searchable="false" data-sortable="false" data-field="name" data-formatter="hardwareLinkFormatter">{{ trans('general.asset') }}</th>
                     <th data-switchable="false" data-searchable="false" data-sortable="false" data-field="qty">{{ trans('general.qty') }}</th>
-                    <th data-switchable="false" data-searchable="false" data-sortable="false" data-field="created_at">{{ trans('general.date') }}</th>
+                    <th data-switchable="false" data-searchable="false" data-sortable="false" data-field="created_at" data-formatter="dateDisplayFormatter">{{ trans('general.date') }}</th>
+                    <th data-switchable="false" data-searchable="false" data-sortable="false" data-field="checkincheckout" data-formatter="componentsInOutFormatter">Checkin/Checkout</th>
                   </tr>
                 </thead>
               </table>
@@ -71,6 +72,12 @@
 
   <!-- side address column -->
   <div class="col-md-3">
+    @if ($component->image!='')
+      <div class="col-md-12" style="padding-bottom: 5px;">
+        <img src="{{ url('/') }}/uploads/components/{{ $component->image  }}">
+      </div>
+    @endif
+
     @if ($component->serial!='')
     <div class="col-md-12" style="padding-bottom: 5px;"><strong>{{ trans('admin/hardware/form.serial') }}: </strong>
     {{ $component->serial }} </div>

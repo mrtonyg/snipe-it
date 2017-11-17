@@ -24,8 +24,8 @@ return array(
     ),
 
     'audit' => array(
-        'error'   		=> 'Asset audit was unsuccessful. Please try again.',
-        'success' 		=> 'Asset audit successfully logged.'
+        'error'   		=> '資產稽核失敗。請再試一次。',
+        'success' 		=> '資產稽核成功登錄。'
     ),
 
 
@@ -61,7 +61,8 @@ return array(
         'error'   		=> '借出資產失敗，請重試。',
         'success' 		=> '借出資產成功。',
         'user_does_not_exist' => '無效使用者，請重試。',
-        'not_available' => '此資產無法借出'
+        'not_available' => '此資產無法借出',
+        'no_assets_selected' => '你必須至少選擇一項資產。'
     ),
 
     'checkin' => array(

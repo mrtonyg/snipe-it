@@ -9,15 +9,16 @@ class ApiAssetsCest
 
     public function _before(ApiTester $I)
     {
+        $I->setupDatabase();
         $this->faker = \Faker\Factory::create();
         $this->user = \App\Models\User::find(1);
-
         $I->amBearerAuthenticated($I->getToken($this->user));
     }
 
     /** @test */
     public function indexAssets(ApiTester $I)
     {
+
         $I->wantTo('Get a list of assets');
 
         // setup
@@ -65,9 +66,9 @@ class ApiAssetsCest
                 'id' => (int) $asset->company->id,
                 'name'=> e($asset->company->name)
             ] : null,
-            'location' => ($asset->assetLoc) ? [
-                'id' => (int) $asset->assetLoc->id,
-                'name'=> e($asset->assetLoc->name)
+            'location' => ($asset->location) ? [
+                'id' => (int) $asset->location->id,
+                'name'=> e($asset->location->name)
             ]  : null,
             'rtd_location' => ($asset->defaultLoc) ? [
                 'id' => (int) $asset->defaultLoc->id,
@@ -222,9 +223,9 @@ class ApiAssetsCest
                 'id' => (int) $temp_asset->company->id,
                 'name'=> e($temp_asset->company->name)
             ] : null,
-            'location' => ($temp_asset->assetLoc) ? [
-                'id' => (int) $temp_asset->assetLoc->id,
-                'name'=> e($temp_asset->assetLoc->name)
+            'location' => ($temp_asset->location) ? [
+                'id' => (int) $temp_asset->location->id,
+                'name'=> e($temp_asset->location->name)
             ]  : null,
             'rtd_location' => ($temp_asset->defaultLoc) ? [
                 'id' => (int) $temp_asset->defaultLoc->id,

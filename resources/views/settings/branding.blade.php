@@ -23,7 +23,7 @@
     <link rel="stylesheet" href="{{ asset('js/plugins/colorpicker/bootstrap-colorpicker.min.css') }}">
 
 
-    {{ Form::open(['method' => 'POST', 'files' => true, 'class' => 'form-horizontal', 'role' => 'form' ]) }}
+    {{ Form::open(['method' => 'POST', 'files' => true, 'autocomplete' => 'off', 'class' => 'form-horizontal', 'role' => 'form' ]) }}
     <!-- CSRF Token -->
     {{csrf_field()}}
 
@@ -86,6 +86,17 @@
                                 {!! $errors->first('brand', '<span class="alert-msg">:message</span>') !!}
                             </div>
                         </div>
+                        <!-- remote load -->
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                {{ Form::label('show_url_in_emails', trans('admin/settings/general.show_url_in_emails')) }}
+                            </div>
+                            <div class="col-md-9">
+                                {{ Form::checkbox('show_url_in_emails', '1', Input::old('show_url_in_emails', $setting->show_url_in_emails),array('class' => 'minimal')) }}
+                                {{ trans('general.yes') }}
+                                <p class="help-block">{{ trans('admin/settings/general.show_url_in_emails_help_text') }}</p>
+                            </div>
+                        </div>
 
                         <!-- Header color -->
                         <div class="form-group {{ $errors->has('header_color') ? 'error' : '' }}">
@@ -146,7 +157,7 @@
 
 @section('moar_scripts')
     <!-- bootstrap color picker -->
-    <script>
+    <script nonce="{{ csrf_token() }}">
         //color picker with addon
         $(".header-color").colorpicker();
         // toggle the disabled state of asset id prefix
